@@ -3,7 +3,7 @@ AKAR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))   # 
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 Q=lambda s: [r.split('|') for r in subprocess.run(['psql','-h','/var/tmp/pg','-U','postgres','-d','spmb_jatimulya04','-AtF|','-c',s],capture_output=True,text=True).stdout.strip().split('\n') if r]
-ENT={'pengguna':'Akun login orang tua/wali, panitia SPMB, dan kepala sekolah',
+ENT={'pengguna':'Akun login orang tua/wali, panitia SPMB, kepala sekolah, dan admin sekolah',
 'periode_spmb':'Jadwal dan daya tampung SPMB per tahun ajaran',
 'kuota_jalur':'Persentase kuota setiap jalur pada suatu periode',
 'jenis_dokumen':'Master jenis dokumen persyaratan (KK, akta, KTP, dll.)',
@@ -14,7 +14,7 @@ ENT={'pengguna':'Akun login orang tua/wali, panitia SPMB, dan kepala sekolah',
 'dokumen':'Berkas persyaratan yang diunggah untuk suatu pendaftaran',
 'riwayat_status':'Jejak audit setiap perubahan status pendaftaran (diisi trigger)'}
 URUT=list(ENT)
-D={'id':'Kunci utama (nomor urut otomatis)','pengguna_id':'Akun orang tua/wali pemilik data','nama':'Nama','email':'Alamat email untuk login (unik)','no_hp':'Nomor HP/WhatsApp, diawali 08','password_hash':'Kata sandi yang sudah di-hash (bcrypt), bukan teks asli','peran':'Peran pengguna: orang_tua, panitia, kepala_sekolah','dibuat_pada':'Waktu data dibuat','diubah_pada':'Waktu data terakhir diubah',
+D={'id':'Kunci utama (nomor urut otomatis)','pengguna_id':'Akun orang tua/wali pemilik data','nama':'Nama','email':'Alamat email untuk login (unik)','no_hp':'Nomor HP/WhatsApp, diawali 08','password_hash':'Kata sandi yang sudah di-hash (bcrypt), bukan teks asli','peran':'Peran pengguna: orang_tua, panitia, kepala_sekolah, admin','dibuat_pada':'Waktu data dibuat','diubah_pada':'Waktu data terakhir diubah',
 'tahun_ajaran':'Tahun ajaran, contoh 2026/2027','tgl_mulai_daftar':'Tanggal mulai pendaftaran','tgl_selesai_daftar':'Tanggal akhir pendaftaran','tgl_pengumuman':'Tanggal pengumuman hasil','tgl_daftar_ulang_mulai':'Tanggal mulai daftar ulang','tgl_daftar_ulang_selesai':'Tanggal akhir daftar ulang','tgl_acuan_usia':'Tanggal acuan perhitungan usia (1 Juli tahun berjalan)','jumlah_rombel':'Jumlah rombongan belajar kelas 1','murid_per_rombel':'Jumlah murid per rombel (maks. 28)','daya_tampung':'Kolom terhitung: jumlah_rombel × murid_per_rombel','aktif':'Penanda periode yang sedang berjalan (hanya satu yang aktif)','seleksi_diproses_pada':'Waktu panitia menetapkan hasil seleksi','hasil_diumumkan':'Penanda hasil seleksi sudah dipublikasikan (mengunci pengaturan)','peringkat':'Urutan hasil seleksi dalam jalurnya (usia → jarak → waktu daftar)','daftar_ulang_pada':'Waktu orang tua mengonfirmasi daftar ulang',
 'periode_id':'Periode SPMB terkait','jalur':'Jalur pendaftaran: domisili, afirmasi, mutasi','persen':'Persentase kuota jalur dari daya tampung',
 'kode':'Kode singkat jenis dokumen, contoh KK, AKTA','jenis_dokumen_id':'Jenis dokumen terkait','wajib':'Apakah dokumen wajib untuk jalur tersebut',
@@ -68,6 +68,7 @@ for t in URUT:
         if c=='nama' and t=='jenis_dokumen': ket='Nama jenis dokumen'
         if c=='nama' and t=='orang_tua_wali': ket='Nama ayah/ibu/wali'
         if c=='nama' and t=='pengguna': ket='Nama lengkap pengguna'
+        if c=='aktif' and t=='pengguna': ket='Status akun; false = dinonaktifkan admin dan tidak dapat login'
         if c=='catatan' and t=='riwayat_status': ket='Catatan alasan perubahan status'
         if c=='catatan' and t=='dokumen': ket='Catatan verifikasi dari panitia'
         if c=='id' and t=='calon_murid': pass

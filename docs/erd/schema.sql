@@ -9,7 +9,7 @@ CREATE SCHEMA spmb;
 SET search_path TO spmb;
 
 -- ---------- Tipe enumerasi ----------
-CREATE TYPE peran_pengguna   AS ENUM ('orang_tua', 'panitia', 'kepala_sekolah');
+CREATE TYPE peran_pengguna   AS ENUM ('orang_tua', 'panitia', 'kepala_sekolah', 'admin');   -- admin = operator sekolah (kelola pengguna)
 CREATE TYPE jalur_spmb       AS ENUM ('domisili', 'afirmasi', 'mutasi');
 CREATE TYPE jenis_kelamin    AS ENUM ('L', 'P');
 CREATE TYPE hubungan_keluarga AS ENUM ('ayah', 'ibu', 'wali');
@@ -25,6 +25,7 @@ CREATE TABLE pengguna (
   no_hp          VARCHAR(15)  NOT NULL,
   password_hash  VARCHAR(100) NOT NULL,
   peran          peran_pengguna NOT NULL DEFAULT 'orang_tua',
+  aktif          BOOLEAN NOT NULL DEFAULT true,   -- akun nonaktif tidak dapat masuk; data tetap disimpan
   dibuat_pada    TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_no_hp CHECK (no_hp ~ '^08[0-9]{8,12}$')
 );

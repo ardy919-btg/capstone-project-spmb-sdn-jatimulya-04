@@ -3,24 +3,24 @@
     "id": "TC-01",
     "skenario": "Registrasi akun dengan data valid",
     "masukan": "Nama, email, HP, sandi valid",
-    "harapan": "Akun tersimpan (201)",
-    "aktual": "201 – akun id 3",
+    "harapan": "Akun tersimpan",
+    "aktual": "Akun berhasil dibuat",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-02",
     "skenario": "Registrasi dengan email yang sudah terdaftar",
     "masukan": "Email sama (huruf besar)",
-    "harapan": "Ditolak, pesan email sudah terdaftar (409)",
-    "aktual": "409 – Email sudah terdaftar",
+    "harapan": "Ditolak, pesan email sudah terdaftar",
+    "aktual": "Email sudah terdaftar",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-03",
     "skenario": "Registrasi dengan format data salah",
     "masukan": "Nama 2 huruf, email/HP/sandi tidak valid",
-    "harapan": "Ditolak dengan pesan per isian (422)",
-    "aktual": "422 – 4 isian ditandai",
+    "harapan": "Ditolak dengan pesan per isian",
+    "aktual": "Data akun belum valid; 4 isian ditandai merah",
     "hasil": "Berhasil"
   },
   {
@@ -28,31 +28,31 @@
     "skenario": "Login dengan email & sandi benar",
     "masukan": "rahmat@contoh.id / sandi benar",
     "harapan": "Berhasil, token sesi diterbitkan",
-    "aktual": "200 – token diterbitkan",
+    "aktual": "Berhasil masuk; sesi login dibuat",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-05",
     "skenario": "Login dengan sandi salah",
     "masukan": "Sandi keliru",
-    "harapan": "Ditolak (401)",
-    "aktual": "401 – Email atau kata sandi salah",
+    "harapan": "Ditolak",
+    "aktual": "Email atau kata sandi salah",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-06",
     "skenario": "Membuka halaman pendaftaran tanpa login",
     "masukan": "Tanpa token",
-    "harapan": "Ditolak, diminta login (401)",
-    "aktual": "401 – Silakan masuk terlebih dahulu",
+    "harapan": "Ditolak, diminta login",
+    "aktual": "Silakan masuk terlebih dahulu",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-07",
     "skenario": "Simpan formulir dengan NIK 15 digit",
     "masukan": "NIK 15 digit",
-    "harapan": "Ditolak, NIK ditandai salah (422)",
-    "aktual": "422 – NIK harus 16 digit angka",
+    "harapan": "Ditolak, NIK ditandai salah",
+    "aktual": "NIK harus 16 digit angka",
     "hasil": "Berhasil"
   },
   {
@@ -60,87 +60,87 @@
     "skenario": "Simpan formulir lengkap jalur domisili",
     "masukan": "Data murid & orang tua valid, lahir 1 Juli 2019",
     "harapan": "Tersimpan status draf; usia dihitung 84 bulan",
-    "aktual": "200 – status draf, usia 84 bulan",
+    "aktual": "Data tersimpan sebagai draf; usia 7 tahun 0 bulan",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-09",
     "skenario": "Ajukan pendaftaran sebelum dokumen diunggah",
     "masukan": "Belum ada dokumen, KK terbit 20-01-2026",
-    "harapan": "Ditolak; seluruh kekurangan (KK dan 3 dokumen) ditampilkan sekaligus (422)",
-    "aktual": "422 – KK ditandai; dokumen kurang: KK, AKTA, KTP_ORTU",
+    "harapan": "Ditolak; ketiga dokumen wajib yang kurang ditampilkan sekaligus, KK baru tidak menjadi alasan penolakan",
+    "aktual": "Dokumen wajib belum lengkap: KK, akta kelahiran, KTP orang tua",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-10",
     "skenario": "Unggah dokumen berformat .docx",
     "masukan": "File Word",
-    "harapan": "Ditolak, format harus PDF/JPG/PNG (415)",
-    "aktual": "415 – Format file harus PDF, JPG, atau PNG",
+    "harapan": "Ditolak, format harus PDF/JPG/PNG",
+    "aktual": "Format file harus PDF, JPG, atau PNG",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-11",
     "skenario": "Unggah dokumen berukuran 3 MB",
     "masukan": "PDF 3 MB",
-    "harapan": "Ditolak, ukuran maksimal 2 MB (413)",
-    "aktual": "413 – Ukuran file maksimal 2 MB",
+    "harapan": "Ditolak, ukuran maksimal 2 MB",
+    "aktual": "Ukuran file maksimal 2 MB",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-12",
     "skenario": "Unggah KK (PDF), Akta (JPG), KTP orang tua (PDF)",
     "masukan": "3 berkas valid < 2 MB",
-    "harapan": "Tersimpan, status dokumen \"menunggu\"",
-    "aktual": "201 – 3 dokumen tersimpan",
+    "harapan": "Tersimpan, status dokumen Menunggu",
+    "aktual": "3 dokumen tersimpan, status Menunggu",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-13",
     "skenario": "Ajukan jalur domisili dengan KK terbit < 1 tahun",
     "masukan": "Tgl terbit KK 20-01-2026",
-    "harapan": "Ditolak, syarat KK min. 1 tahun (422)",
-    "aktual": "422 – Jalur domisili mensyaratkan KK terbit paling singkat 1 tahun sebelum pendaftaran dibuka",
+    "harapan": "Pengajuan berhasil; KK baru hanya menjadi peringatan bagi panitia",
+    "aktual": "Pendaftaran berhasil diajukan",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-14",
     "skenario": "Ajukan pendaftaran yang sudah lengkap",
-    "masukan": "KK terbit 10-02-2023, dokumen lengkap",
+    "masukan": "Data & dokumen wajib lengkap",
     "harapan": "Status \"diajukan\", nomor pendaftaran terbit, riwayat tercatat",
-    "aktual": "200 – SPMB-2026-DOM-0001, 2 baris riwayat",
+    "aktual": "Status Diajukan; nomor SPMB-2026-DOM-0001 terbit; riwayat status tercatat",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-15",
     "skenario": "Mengubah data setelah pendaftaran diajukan",
     "masukan": "Ubah nama calon murid",
-    "harapan": "Ditolak, data terkunci (409)",
-    "aktual": "409 – Pendaftaran sudah diajukan dan tidak dapat diubah",
+    "harapan": "Ditolak, data terkunci",
+    "aktual": "Pendaftaran sudah diajukan dan tidak dapat diubah",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-16",
     "skenario": "Ajukan calon murid berusia 5 tahun 3 bulan",
     "masukan": "Lahir 15-03-2021",
-    "harapan": "Ditolak, usia di bawah 5 tahun 6 bulan (422)",
-    "aktual": "422 – Usia calon murid kurang dari 5 tahun 6 bulan pada tanggal acuan.",
+    "harapan": "Ditolak, usia di bawah 5 tahun 6 bulan",
+    "aktual": "Usia calon murid kurang dari 5 tahun 6 bulan pada tanggal acuan.",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-17",
     "skenario": "Ajukan calon murid usia 5 tahun 7 bulan tanpa rekomendasi psikolog",
     "masukan": "Lahir 06-11-2020",
-    "harapan": "Ditolak, rekomendasi psikolog wajib (422)",
-    "aktual": "422 – kurang: REKOM_PSIKOLOG",
+    "harapan": "Ditolak, rekomendasi psikolog wajib",
+    "aktual": "Dokumen wajib belum lengkap: Rekomendasi Psikolog",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-18",
     "skenario": "Ajukan jalur afirmasi tanpa bukti KIP/KKS/PKH",
     "masukan": "Jalur afirmasi, 3 dokumen umum",
-    "harapan": "Ditolak, bukti afirmasi wajib (422)",
-    "aktual": "422 – kurang: BUKTI_AFIRMASI",
+    "harapan": "Ditolak, bukti afirmasi wajib",
+    "aktual": "Dokumen wajib belum lengkap: Kartu KIP/KKS/PKH",
     "hasil": "Berhasil"
   },
   {
@@ -148,31 +148,31 @@
     "skenario": "Ajukan jalur afirmasi dengan bukti KIP lengkap",
     "masukan": "Tambah unggahan KIP",
     "harapan": "Diajukan, nomor berawalan SPMB-2026-AFI",
-    "aktual": "200 – SPMB-2026-AFI-0002",
+    "aktual": "Pendaftaran diajukan dengan nomor SPMB-2026-AFI-0002",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-20",
     "skenario": "Mendaftarkan NIK calon murid yang sudah terdaftar di akun lain",
     "masukan": "NIK sama dengan TC-08",
-    "harapan": "Ditolak, NIK sudah terdaftar (409)",
-    "aktual": "409 – NIK calon murid sudah terdaftar pada akun lain",
+    "harapan": "Ditolak, NIK sudah terdaftar",
+    "aktual": "NIK calon murid sudah terdaftar pada akun lain",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-21",
     "skenario": "Ajukan pendaftaran di luar jadwal",
     "masukan": "Tanggal sistem 15-10-2026",
-    "harapan": "Ditolak, pendaftaran ditutup (409)",
-    "aktual": "409 – Pendaftaran hanya dibuka 2026-06-19 s.d. 2026-07-02",
+    "harapan": "Ditolak, pendaftaran ditutup",
+    "aktual": "Pendaftaran hanya dibuka 2026-06-19 s.d. 2026-07-02",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-22",
     "skenario": "Simpan data pelengkap Dapodik dengan tinggi badan tidak wajar",
     "masukan": "Tinggi badan 300 cm",
-    "harapan": "Ditolak, tinggi badan ditandai (422)",
-    "aktual": "422 – Tinggi badan (cm) harus antara 50 dan 200",
+    "harapan": "Ditolak, tinggi badan ditandai",
+    "aktual": "Tinggi badan (cm) harus antara 50 dan 200",
     "hasil": "Berhasil"
   },
   {
@@ -180,47 +180,47 @@
     "skenario": "Simpan data pelengkap Dapodik yang valid",
     "masukan": "Patokan, tempat tinggal, transportasi, waktu, tinggi, berat, saudara, KIS",
     "harapan": "Seluruh data pelengkap tersimpan",
-    "aktual": "200 – tinggi 118 cm, berat 21.5 kg, tinggal orang_tua",
+    "aktual": "Tersimpan: tinggi 118 cm, berat 21.5 kg, tinggal bersama orang tua",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-24",
     "skenario": "Orang tua membuka menu verifikasi panitia",
     "masukan": "Token akun orang tua",
-    "harapan": "Ditolak, tidak berhak (403)",
-    "aktual": "403 – Anda tidak memiliki hak akses ke fitur ini",
+    "harapan": "Ditolak, tidak berhak",
+    "aktual": "Anda tidak memiliki hak akses ke fitur ini",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-25",
     "skenario": "Panitia masuk dan melihat daftar pendaftar",
     "masukan": "Akun panitia",
-    "harapan": "Peran panitia; daftar memuat pendaftar berstatus diajukan, tanpa draf",
-    "aktual": "200 – peran panitia, 2 pendaftar",
+    "harapan": "Masuk sebagai panitia; daftar hanya memuat pendaftar yang sudah mengajukan",
+    "aktual": "Masuk sebagai panitia; tampil 2 pendaftar berstatus Diajukan",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-26",
     "skenario": "Menyatakan terverifikasi sebelum dokumen diperiksa",
     "masukan": "Semua dokumen masih \"menunggu\"",
-    "harapan": "Ditolak, dokumen wajib harus valid (422)",
-    "aktual": "422 – Semua dokumen wajib harus dinyatakan valid terlebih dahulu",
+    "harapan": "Ditolak, dokumen wajib harus valid",
+    "aktual": "Semua dokumen wajib harus dinyatakan valid terlebih dahulu",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-27",
     "skenario": "Menolak dokumen tanpa menuliskan alasan",
     "masukan": "Status tidak valid, catatan kosong",
-    "harapan": "Ditolak, alasan wajib (422)",
-    "aktual": "422 – Tuliskan alasan dokumen tidak valid",
+    "harapan": "Ditolak, alasan wajib",
+    "aktual": "Tuliskan alasan dokumen tidak valid",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-28",
     "skenario": "Membuka berkas unggahan dari halaman verifikasi",
     "masukan": "Panitia vs akun orang tua",
-    "harapan": "Panitia dapat melihat PDF (200); orang tua lain ditolak (403)",
-    "aktual": "panitia 200 (application/pdf), orang tua 403",
+    "harapan": "Panitia dapat melihat PDF; orang tua lain ditolak",
+    "aktual": "Panitia: berkas PDF tampil; orang tua: Anda tidak memiliki hak akses ke fitur ini",
     "hasil": "Berhasil"
   },
   {
@@ -228,7 +228,7 @@
     "skenario": "Meminta perbaikan berkas kepada orang tua",
     "masukan": "KTP tidak valid + catatan",
     "harapan": "Status \"perlu perbaikan\", riwayat mencatat nama panitia",
-    "aktual": "200 – perlu_perbaikan, oleh Panitia SPMB SDN Jatimulya 04",
+    "aktual": "Status Perlu perbaikan; riwayat mencatat Panitia SPMB SDN Jatimulya 04",
     "hasil": "Berhasil"
   },
   {
@@ -236,7 +236,7 @@
     "skenario": "Orang tua mengunggah ulang dan mengajukan kembali",
     "masukan": "KTP baru",
     "harapan": "Status kembali \"diajukan\" dengan nomor pendaftaran yang sama",
-    "aktual": "200 – diajukan, SPMB-2026-DOM-0001",
+    "aktual": "Status kembali Diajukan; nomor tetap SPMB-2026-DOM-0001",
     "hasil": "Berhasil"
   },
   {
@@ -244,23 +244,23 @@
     "skenario": "Memverifikasi pendaftar dengan dokumen lengkap dan valid",
     "masukan": "3 dokumen valid",
     "harapan": "Status \"terverifikasi\"",
-    "aktual": "200 – terverifikasi",
+    "aktual": "Status menjadi Terverifikasi",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-32",
     "skenario": "Mengatur kuota yang melanggar ketentuan",
     "masukan": "Afirmasi 10%, mutasi 10%",
-    "harapan": "Ditolak; afirmasi ≥15% dan mutasi ≤5% ditandai (422)",
-    "aktual": "422 – kuota.afirmasi, kuota.mutasi",
+    "harapan": "Ditolak; isian afirmasi (min. 15%) dan mutasi (maks. 5%) ditandai",
+    "aktual": "Periksa kembali pengaturan periode: Jalur afirmasi paling sedikit 15%; Jalur mutasi paling banyak 5%",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-33",
     "skenario": "Mengatur murid per rombel melebihi 28",
     "masukan": "30 murid per rombel",
-    "harapan": "Ditolak (422)",
-    "aktual": "422 – Murid per rombel SD maksimal 28",
+    "harapan": "Ditolak",
+    "aktual": "Murid per rombel SD maksimal 28",
     "hasil": "Berhasil"
   },
   {
@@ -268,7 +268,7 @@
     "skenario": "Mengubah daya tampung (skenario uji diperkecil)",
     "masukan": "1 rombel × 4 murid",
     "harapan": "Tersimpan; kuota domisili 3, afirmasi 1, mutasi 0",
-    "aktual": "200 – daya 4, kuota 3/1/0",
+    "aktual": "Tersimpan; daya tampung 4, kuota 3/1/0 kursi",
     "hasil": "Berhasil"
   },
   {
@@ -276,23 +276,23 @@
     "skenario": "Pratinjau peringkat jalur domisili",
     "masukan": "5 peserta terverifikasi, kuota 3",
     "harapan": "Urut usia tertua; usia sama didahulukan yang lebih dekat; 3 teratas diterima",
-    "aktual": "urutan Bagas✓, Citra✓, Aisyah✓, Dafa✗, Elsa✗",
+    "aktual": "Urutan: Bagas (diterima), Citra (diterima), Aisyah (diterima), Dafa (tidak), Elsa (tidak)",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-36",
     "skenario": "Menetapkan hasil saat pendaftaran masih dibuka",
     "masukan": "Tanggal sistem 22-06-2026",
-    "harapan": "Ditolak (409)",
-    "aktual": "409 – Seleksi baru dapat ditetapkan setelah masa pendaftaran ditutup",
+    "harapan": "Ditolak",
+    "aktual": "Seleksi baru dapat ditetapkan setelah masa pendaftaran ditutup",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-37",
     "skenario": "Menetapkan hasil saat masih ada pendaftar belum diverifikasi",
     "masukan": "Tanggal 03-07-2026, 1 pendaftar \"diajukan\"",
-    "harapan": "Ditolak (409)",
-    "aktual": "409 – Masih ada 1 pendaftar yang belum diverifikasi",
+    "harapan": "Ditolak",
+    "aktual": "Masih ada 1 pendaftar yang belum diverifikasi",
     "hasil": "Berhasil"
   },
   {
@@ -300,23 +300,23 @@
     "skenario": "Menetapkan dan mengumumkan hasil seleksi",
     "masukan": "Semua sudah diverifikasi",
     "harapan": "Status diterima/tidak diterima tersimpan; pendaftar \"perlu perbaikan\" dinyatakan tidak diterima",
-    "aktual": "200 – diumumkan true, Fikri: tidak_diterima, Dimas (afirmasi) diterima: true",
+    "aktual": "Hasil diumumkan; Fikri (perlu perbaikan) tidak diterima; Dimas (afirmasi) diterima",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-39",
     "skenario": "Mengubah pengaturan atau menetapkan ulang setelah diumumkan",
     "masukan": "Simpan pengaturan & umumkan lagi",
-    "harapan": "Keduanya ditolak (409)",
-    "aktual": "pengaturan 409, umumkan ulang 409",
+    "harapan": "Keduanya ditolak",
+    "aktual": "Pengaturan: Pengaturan terkunci karena hasil seleksi sudah diumumkan; umumkan ulang: Hasil seleksi sudah diumumkan",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-40",
     "skenario": "Cek status dengan tanggal lahir yang salah",
     "masukan": "Nomor benar, tanggal lahir salah",
-    "harapan": "Data tidak ditampilkan (404)",
-    "aktual": "404 – Data tidak ditemukan. Periksa nomor pendaftaran dan tanggal lahir.",
+    "harapan": "Data tidak ditampilkan",
+    "aktual": "Data tidak ditemukan. Periksa nomor pendaftaran dan tanggal lahir.",
     "hasil": "Berhasil"
   },
   {
@@ -324,7 +324,7 @@
     "skenario": "Cek status dengan nomor pendaftaran & tanggal lahir benar",
     "masukan": "SPMB-2026-DOM-0001, 01-07-2019",
     "harapan": "Status diterima, nama disamarkan, tanpa NIK",
-    "aktual": "200 – Aisyah P. R., diterima, peringkat 3",
+    "aktual": "Tampil: Aisyah P. R., Diterima, peringkat 3",
     "hasil": "Berhasil"
   },
   {
@@ -332,39 +332,39 @@
     "skenario": "Membuka halaman pengumuman publik",
     "masukan": "Tanpa login",
     "harapan": "Hanya peserta diterima, nama disamarkan, tanpa NIK/alamat",
-    "aktual": "200 – 4 nama diterima (Bagas R.; Citra K.; Aisyah P. R.; Dimas S.)",
+    "aktual": "4 nama diterima: Bagas R.; Citra K.; Aisyah P. R.; Dimas S.",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-43",
     "skenario": "Daftar ulang oleh calon murid yang tidak diterima",
     "masukan": "Akun Elsa (tidak diterima)",
-    "harapan": "Ditolak (409)",
-    "aktual": "409 – Daftar ulang hanya untuk calon murid yang dinyatakan diterima",
+    "harapan": "Ditolak",
+    "aktual": "Daftar ulang hanya untuk calon murid yang dinyatakan diterima",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-44",
     "skenario": "Konfirmasi daftar ulang di luar dan di dalam jadwal",
     "masukan": "Tanggal 22-06 lalu 03-07-2026",
-    "harapan": "Di luar jadwal ditolak (409); di dalam jadwal tercatat",
-    "aktual": "luar 409, dalam 200 – tercatat",
+    "harapan": "Di luar jadwal ditolak; di dalam jadwal tercatat",
+    "aktual": "Di luar jadwal: Daftar ulang dibuka 2026-07-03 s.d. 2026-07-04; di dalam jadwal: daftar ulang tercatat",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-45",
     "skenario": "Kepala sekolah membuka rekap",
     "masukan": "Akun kepala sekolah",
-    "harapan": "Rekap tampil (7 pendaftar, 1 daftar ulang); menu verifikasi ditolak (403)",
-    "aktual": "200 – 7 pendaftar; verifikasi 403",
+    "harapan": "Rekap tampil (7 pendaftar, 1 daftar ulang); menu verifikasi ditolak",
+    "aktual": "Rekap tampil: 7 pendaftar, 1 daftar ulang; menu verifikasi: Anda tidak memiliki hak akses ke fitur ini",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-46",
     "skenario": "Mengunduh rekap dalam format CSV",
     "masukan": "Tombol unduh",
-    "harapan": "Berkas CSV: 1 baris judul + 7 baris data",
-    "aktual": "200 – text/csv, 8 baris",
+    "harapan": "Berkas CSV terunduh: 1 baris judul + 7 baris data",
+    "aktual": "Berkas CSV terunduh: 8 baris (1 judul + 7 data)",
     "hasil": "Berhasil"
   },
   {
@@ -372,23 +372,23 @@
     "skenario": "Isi otomatis dari foto Kartu Keluarga (OCR)",
     "masukan": "Foto KK fiktif (miring, buram)",
     "harapan": "NIK, nomor KK, nama, tanggal lahir anak terbaca benar",
-    "aktual": "200 – 14 isian, keyakinan 86%",
+    "aktual": "18 isian terbaca (keyakinan 89%), termasuk NIK, nomor KK, nama, dan tanggal lahir yang tepat",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-48",
     "skenario": "OCR pada gambar tanpa tulisan",
     "masukan": "Gambar putih kosong",
-    "harapan": "Pesan tidak terbaca, diminta isi manual (422)",
-    "aktual": "422 – Teks pada dokumen tidak terbaca. Gunakan foto yang lebih terang dan tegak, atau isi formulir secara manual.",
+    "harapan": "Pesan tidak terbaca, diminta isi manual",
+    "aktual": "Teks pada dokumen tidak terbaca. Gunakan foto yang lebih terang dan tegak, atau isi formulir secara manual.",
     "hasil": "Berhasil"
   },
   {
     "id": "TC-49",
     "skenario": "OCR tanpa login",
     "masukan": "Tanpa token",
-    "harapan": "Ditolak (401)",
-    "aktual": "401 – Silakan masuk terlebih dahulu",
+    "harapan": "Ditolak",
+    "aktual": "Silakan masuk terlebih dahulu",
     "hasil": "Berhasil"
   },
   {
@@ -404,7 +404,7 @@
     "skenario": "Simpan formulir hasil isi otomatis",
     "masukan": "Token berkas OCR KK dan akta ikut dikirim",
     "harapan": "KK dan akta otomatis tersimpan sebagai dokumen persyaratan (tanpa unggah ulang)",
-    "aktual": "200 – dokumen: KK (kk_foto.jpg), AKTA (akta_foto.jpg)",
+    "aktual": "Tersimpan sebagai dokumen: kk_foto.jpg (KK), akta_foto.jpg (akta)",
     "hasil": "Berhasil"
   },
   {
@@ -412,7 +412,103 @@
     "skenario": "Memakai token berkas OCR milik akun lain atau yang sudah terpakai",
     "masukan": "Token akun lain + token bekas",
     "harapan": "Formulir tersimpan, tetapi tidak ada berkas yang dilampirkan",
-    "aktual": "200 – 0 dokumen dilampirkan",
+    "aktual": "Formulir tersimpan; 0 dokumen dilampirkan",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-53",
+    "skenario": "Hak akses menu Kelola Pengguna",
+    "masukan": "Panitia membuka Kelola Pengguna; Admin membuka menu panitia",
+    "harapan": "Panitia ditolak; Admin dapat membuka menu panitia",
+    "aktual": "Panitia: Anda tidak memiliki hak akses ke fitur ini; Admin: daftar 2 pendaftar tampil",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-54",
+    "skenario": "Admin menghapus data pendaftaran sebelum pengumuman",
+    "masukan": "Data calon murid Farah Amalia (draf)",
+    "harapan": "Data terhapus; akun orang tua tetap ada dan dapat mendaftar dari awal",
+    "aktual": "Data pendaftaran Farah Amalia telah dihapus. Orang tua dapat mendaftar ulang dari awal. Akun orang tua masih dapat masuk; formulir kosong.",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-55",
+    "skenario": "Admin menghapus data pendaftaran setelah hasil diumumkan",
+    "masukan": "Data Aisyah (diterima)",
+    "harapan": "Ditolak; data peserta tidak dapat dihapus setelah pengumuman",
+    "aktual": "Hasil seleksi sudah diumumkan; data pendaftaran tidak dapat dihapus",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-56",
+    "skenario": "Admin menambah akun panitia baru",
+    "masukan": "Nama, email, HP, peran panitia, kata sandi",
+    "harapan": "Akun tersimpan dan dapat dipakai masuk sebagai panitia",
+    "aktual": "Akun siti.panitia@sdnjatimulya04.sch.id dibuat; masuk berhasil sebagai panitia",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-57",
+    "skenario": "Admin menonaktifkan akun panitia",
+    "masukan": "Akun Siti Rohmah dinonaktifkan",
+    "harapan": "Akun tidak dapat masuk dan sesi yang sedang berjalan langsung terputus",
+    "aktual": "Masuk: Akun dinonaktifkan. Hubungi Admin Sekolah.; sesi lama: Akun dinonaktifkan. Hubungi Admin Sekolah.",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-58",
+    "skenario": "Admin menonaktifkan akunnya sendiri",
+    "masukan": "Akun admin yang sedang dipakai",
+    "harapan": "Ditolak agar sistem tidak kehilangan admin",
+    "aktual": "Anda tidak dapat menonaktifkan akun Anda sendiri",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-59",
+    "skenario": "Admin mengatur ulang kata sandi orang tua",
+    "masukan": "Akun ortu2@contoh.id lupa kata sandi",
+    "harapan": "Kata sandi sementara terbit dan dapat dipakai masuk",
+    "aktual": "Kata sandi sementara 8 karakter terbit; masuk berhasil",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-60",
+    "skenario": "Permintaan lupa kata sandi",
+    "masukan": "Email terdaftar dan email yang tidak terdaftar",
+    "harapan": "Pesan sama untuk keduanya; email berisi tautan hanya dikirim ke email terdaftar",
+    "aktual": "Jika email tersebut terdaftar, tautan untuk membuat kata sandi baru telah dikirim. Periksa kotak masuk atau folder spam. (tautan reset terkirim ke rahmat@contoh.id)",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-61",
+    "skenario": "Membuat kata sandi baru dari tautan email",
+    "masukan": "Tautan reset + kata sandi baru",
+    "harapan": "Kata sandi berganti dan dapat dipakai masuk",
+    "aktual": "Kata sandi berhasil diganti. Silakan masuk dengan kata sandi baru. Masuk dengan kata sandi baru berhasil.",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-62",
+    "skenario": "Memakai tautan reset yang sama untuk kedua kali",
+    "masukan": "Tautan yang sudah dipakai",
+    "harapan": "Ditolak; tautan hanya berlaku sekali",
+    "aktual": "Tautan reset tidak berlaku atau sudah kedaluwarsa. Silakan minta tautan baru.",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-63",
+    "skenario": "Mengubah profil dan kata sandi",
+    "masukan": "Nama & HP baru; kata sandi lama salah",
+    "harapan": "Profil tersimpan; penggantian kata sandi ditolak karena kata sandi lama salah",
+    "aktual": "Profil: Rahmat Hidayatullah, 081234567899; kata sandi: Kata sandi lama salah",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-64",
+    "skenario": "RW \"-\" dan data ayah belum lengkap",
+    "masukan": "RW \"-\" (daerah tanpa RW); pendidikan, pekerjaan, penghasilan ayah kosong",
+    "harapan": "RW \"-\" diterima; pengajuan ditolak dan ketiga kolom ayah ditandai",
+    "aktual": "RW tersimpan \"-\"; Pendidikan, pekerjaan, dan penghasilan ayah/ibu wajib diisi",
     "hasil": "Berhasil"
   }
 ]

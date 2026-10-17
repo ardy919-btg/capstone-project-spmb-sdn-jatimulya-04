@@ -1,7 +1,7 @@
 Sumber data mentah ERD - SPMB Online SDN Jatimulya 04 (Kelompok C, STSI4440)
 
 1. Kamus Data ERD SPMB SDN Jatimulya 04.xlsx
-   Daftar 10 entitas, kamus data 107 atribut (tipe, PK/FK/UK, NOT NULL, default,
+   Daftar 10 entitas, kamus data 108 atribut (tipe, PK/FK/UK, NOT NULL, default,
    keterangan), 10 relasi beserta kardinalitas, enum, CHECK, trigger, dan view.
    Dibuat otomatis dari basis data PostgreSQL yang berjalan, jadi isinya sama
    persis dengan aplikasi.

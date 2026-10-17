@@ -49,7 +49,7 @@ Basis data yang sudah berjalan sebelum ada peran Admin cukup dimigrasi (data tid
 `psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql`
 
 ## Pengujian
-- `tests/jalankan.sh` — reset basis data, jalankan 3 server (22 Jun, 15 Okt, 3 Jul 2026), lalu 49 skenario black-box.
+- `tests/jalankan.sh` — reset basis data, jalankan 3 server (22 Jun, 15 Okt, 3 Jul 2026), lalu 64 skenario black-box.
 - `tests/jalankan_ui.sh` — reset basis data, isi data contoh fiktif, lalu uji end-to-end Playwright + tangkapan layar.
 - `tests/ocr/uji_ocr.js` — mengukur akurasi OCR terhadap contoh KK/akta fiktif (`tests/ocr/buat_contoh.py`).
 
