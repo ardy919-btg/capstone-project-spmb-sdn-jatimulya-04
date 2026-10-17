@@ -1,0 +1,90 @@
+{
+ "baris": [
+  {
+   "berkas": "kk1_pindai.png",
+   "dokumen": "KK",
+   "versi": "pindai",
+   "waktu_ms": 2967,
+   "keyakinan": 90,
+   "field_benar": 12,
+   "field_total": 13,
+   "tidak_tepat": [
+    "alamat"
+   ]
+  },
+  {
+   "berkas": "kk1_foto.jpg",
+   "dokumen": "KK",
+   "versi": "foto",
+   "waktu_ms": 2412,
+   "keyakinan": 86,
+   "field_benar": 12,
+   "field_total": 13,
+   "tidak_tepat": [
+    "tgl_terbit_kk"
+   ]
+  },
+  {
+   "berkas": "akta1_pindai.png",
+   "dokumen": "AKTA",
+   "versi": "pindai",
+   "waktu_ms": 1916,
+   "keyakinan": 95,
+   "field_benar": 5,
+   "field_total": 5,
+   "tidak_tepat": []
+  },
+  {
+   "berkas": "akta1_foto.jpg",
+   "dokumen": "AKTA",
+   "versi": "foto",
+   "waktu_ms": 2330,
+   "keyakinan": 89,
+   "field_benar": 5,
+   "field_total": 5,
+   "tidak_tepat": []
+  },
+  {
+   "berkas": "kk2_pindai.png",
+   "dokumen": "KK",
+   "versi": "pindai",
+   "waktu_ms": 2623,
+   "keyakinan": 91,
+   "field_benar": 13,
+   "field_total": 13,
+   "tidak_tepat": []
+  },
+  {
+   "berkas": "kk2_foto.jpg",
+   "dokumen": "KK",
+   "versi": "foto",
+   "waktu_ms": 2260,
+   "keyakinan": 76,
+   "field_benar": 13,
+   "field_total": 13,
+   "tidak_tepat": []
+  },
+  {
+   "berkas": "akta2_pindai.png",
+   "dokumen": "AKTA",
+   "versi": "pindai",
+   "waktu_ms": 2262,
+   "keyakinan": 94,
+   "field_benar": 5,
+   "field_total": 5,
+   "tidak_tepat": []
+  },
+  {
+   "berkas": "akta2_foto.jpg",
+   "dokumen": "AKTA",
+   "versi": "foto",
+   "waktu_ms": 2452,
+   "keyakinan": 92,
+   "field_benar": 5,
+   "field_total": 5,
+   "tidak_tepat": []
+  }
+ ],
+ "benar": 70,
+ "total": 72
+}

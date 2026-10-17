@@ -1,0 +1,20 @@
+flowchart TD
+  A([Pendaftaran diajukan]) --> B[Panitia membuka detail pendaftar]
+  B --> C[Periksa otomatis: usia, KK ≥ 1 tahun,<br/>kelengkapan dokumen]
+  C --> D[Lihat berkas dan tandai<br/>tiap dokumen valid/tidak valid]
+  D --> E{Semua dokumen<br/>wajib valid?}
+  E -- Tidak --> F[Status PERLU PERBAIKAN<br/>+ catatan untuk orang tua]
+  F --> G[Orang tua unggah ulang<br/>dan ajukan kembali]
+  G --> B
+  E -- Ya --> H[Status TERVERIFIKASI]
+  H --> I{Pendaftaran ditutup &<br/>semua sudah diverifikasi?}
+  I -- Belum --> B
+  I -- Ya --> J[Hitung peringkat per jalur:<br/>usia tertua → jarak terdekat → waktu daftar]
+  J --> K[Limpahkan sisa kursi afirmasi<br/>& mutasi ke domisili]
+  K --> L[Panitia memeriksa pratinjau<br/>lalu menetapkan hasil]
+  L --> M[Status DITERIMA / TIDAK DITERIMA,<br/>pengumuman publik terbit]
+  M --> N{Diterima?}
+  N -- Ya --> O[Orang tua konfirmasi<br/>daftar ulang online]
+  N -- Tidak --> P[Informasi penyaluran ke<br/>SD negeri terdekat]
+  O --> Q([Rekap untuk kepala sekolah])
+  P --> Q

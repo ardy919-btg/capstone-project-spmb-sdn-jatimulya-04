@@ -1,0 +1,21 @@
+flowchart TD
+  A([Mulai]) --> B[Buat akun & login]
+  B --> P{Pilih cara<br/>pengisian}
+  P -- Otomatis --> O[Foto KK & akta;<br/>OCR mengisi data anak,<br/>ayah, dan ibu]
+  O --> C[Periksa/isi data calon murid]
+  P -- Manual --> C
+  C --> D{Data valid?}
+  D -- Tidak --> C
+  D -- Ya --> E[Hitung usia per 1 Juli 2026,<br/>simpan status DRAF]
+  E --> F[Periksa/isi data orang tua/wali]
+  F --> G[Pilih jalur pendaftaran]
+  G --> H["Unggah dokumen yang belum ada<br/>(KK & akta hasil OCR sudah tersimpan)"]
+  H --> I[Ajukan pendaftaran]
+  I --> J{Syarat<br/>terpenuhi?}
+  J -- Tidak --> K[Tampilkan semua<br/>kekurangan]
+  K --> C
+  J -- Ya --> L[Status DIAJUKAN,<br/>nomor pendaftaran terbit]
+  L --> M[Cetak bukti pendaftaran]
+  M --> N([Menunggu verifikasi panitia])
+  J -.- S["Syarat: dalam jadwal; usia ≥ 5 th 6 bln<br/>(5 th 6 bln–6 th + rekomendasi psikolog);<br/>KK ≥ 1 tahun untuk domisili;<br/>dokumen wajib jalur lengkap"]
+  style S fill:#fff8e6,stroke:#a15c07

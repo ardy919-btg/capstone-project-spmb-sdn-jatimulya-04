@@ -1,0 +1,81 @@
+[
+ {
+  "no_kk": "3216050909140011",
+  "kepala": "AGUS SALIM",
+  "alamat": "KP. RAWA BAMBU NO. 21",
+  "rt": "002",
+  "rw": "005",
+  "kel": "JATIMULYA",
+  "kec": "TAMBUN SELATAN",
+  "pos": "17510",
+  "terbit": "01-08-2022",
+  "anggota": [
+   [
+    "AGUS SALIM",
+    "3216051005850009",
+    "LAKI-LAKI",
+    "BEKASI",
+    "10-05-1985"
+   ],
+   [
+    "DEWI KARTIKA",
+    "3216055206890004",
+    "PEREMPUAN",
+    "JAKARTA",
+    "12-06-1989"
+   ],
+   [
+    "NAYLA PUTRI SALIM",
+    "3216054107150002",
+    "PEREMPUAN",
+    "BEKASI",
+    "01-07-2015"
+   ],
+   [
+    "FADHIL AKBAR MAULANA",
+    "3216051403190008",
+    "LAKI-LAKI",
+    "BEKASI",
+    "14-03-2019"
+   ]
+  ],
+  "akta": "3216-LU-14032019-0044",
+  "anak_ke": 2
+ },
+ {
+  "no_kk": "3216052203170006",
+  "kepala": "RUDI HARTONO",
+  "alamat": "PERUM GRIYA ASRI BLOK C2 NO 7",
+  "rt": "011",
+  "rw": "004",
+  "kel": "JATIMULYA",
+  "kec": "TAMBUN SELATAN",
+  "pos": "17510",
+  "terbit": "15-02-2021",
+  "anggota": [
+   [
+    "RUDI HARTONO",
+    "3216050708880003",
+    "LAKI-LAKI",
+    "SEMARANG",
+    "07-08-1988"
+   ],
+   [
+    "SITI AMINAH",
+    "3216054911900001",
+    "PEREMPUAN",
+    "BEKASI",
+    "09-11-1990"
+   ],
+   [
+    "ZAHRA AULIA HARTONO",
+    "3216056510190005",
+    "PEREMPUAN",
+    "BEKASI",
+    "25-10-2019"
+   ]
+  ],
+  "akta": "3216-LT-25102019-0312",
+  "anak_ke": 1
+ }
+]

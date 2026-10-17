@@ -1,0 +1,12 @@
+# Akhir baris konsisten (LF) di repo untuk semua anggota kelompok (Windows/Linux/macOS)
+* text=auto eol=lf
+# Skrip PowerShell tetap CRLF agar nyaman di Windows
+*.ps1 text eol=crlf
+# Berkas biner: jangan diubah sama sekali
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.xlsx binary
+*.docx binary
+*.zip binary

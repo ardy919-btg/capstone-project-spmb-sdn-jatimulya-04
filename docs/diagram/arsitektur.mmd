@@ -1,0 +1,18 @@
+flowchart LR
+  subgraph K["Klien (peramban HP/komputer)"]
+    V["Vue.js 3 + Vue Router (SPA)<br/>orang tua · panitia · kepala sekolah · publik"]
+  end
+  subgraph S["Server aplikasi (Node.js)"]
+    E["Express REST API<br/>auth · info · pendaftaran · ocr<br/>panitia · rekap · cek-status · pengumuman"]
+    R["Aturan bisnis SPMB<br/>(usia, KK, dokumen, jadwal,<br/>seleksi & limpahan kuota)"]
+    O["Modul OCR<br/>Tesseract 5 (bahasa ind)<br/>+ ImageMagick, antrean maks. 2"]
+    F[("Penyimpanan berkas<br/>uploads/")]
+  end
+  subgraph D["Basis data"]
+    P[("PostgreSQL 16<br/>skema spmb")]
+  end
+  V -- "HTTPS + JSON, token JWT" --> E
+  E --> R
+  E -- "berkas sementara" --> O
+  E -- "multipart/form-data" --> F
+  E -- "SQL (pg), transaksi" --> P

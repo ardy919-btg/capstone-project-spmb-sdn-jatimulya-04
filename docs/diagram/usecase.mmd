@@ -1,0 +1,23 @@
+flowchart LR
+  OT(["👤 Orang Tua/Wali"])
+  PN(["👤 Panitia SPMB"])
+  KS(["👤 Kepala Sekolah"])
+  subgraph S["Sistem Informasi SPMB Online SDN Jatimulya 04"]
+    direction TB
+    U1([Melihat informasi SPMB])
+    U2([Registrasi akun])
+    U3([Login])
+    U4([Mengisi data calon murid & orang tua])
+    U5([Memilih jalur pendaftaran])
+    U6([Mengunggah dokumen])
+    U7([Mengajukan pendaftaran])
+    U8([Melihat status & mencetak bukti])
+    U9([Memverifikasi berkas]):::rencana
+    U10([Mengelola kuota & jadwal]):::rencana
+    U11([Menetapkan & mengumumkan hasil]):::rencana
+    U12([Melihat rekap pendaftar]):::rencana
+  end
+  OT --- U1 & U2 & U3 & U4 & U5 & U6 & U7 & U8
+  PN --- U3 & U9 & U10 & U11
+  KS --- U3 & U12 & U11
+  classDef rencana fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:5 4,color:#4b5563

@@ -1,0 +1,29 @@
+# --- Data pribadi & dokumen kerja: JANGAN diunggah ke repo publik ---
+# KK/akta/KTP asli, laporan, panduan, installer
+/Dokumen/
+# Berkas yang diunggah pengguna saat aplikasi dijalankan
+/backend/uploads/
+# Tangkapan layar hasil uji antarmuka
+/tests/screenshot/
+
+# --- Hasil instalasi & build (dibuat ulang dengan npm install / npm run build) ---
+node_modules/
+/frontend/dist/
+
+# --- Rahasia & konfigurasi lokal ---
+.env
+.env.*
+*.local
+
+# --- Lain-lain ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# --- Berkas asisten/alat bantu lokal ---
+.claude/
+CLAUDE.md

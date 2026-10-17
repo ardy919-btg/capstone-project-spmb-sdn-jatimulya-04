@@ -1,0 +1,96 @@
+erDiagram
+  PENGGUNA ||--o| CALON_MURID : "mendaftarkan"
+  CALON_MURID ||--|{ ORANG_TUA_WALI : "memiliki"
+  CALON_MURID ||--o{ PENDAFTARAN : "mengikuti"
+  PERIODE_SPMB ||--o{ PENDAFTARAN : "menampung"
+  PERIODE_SPMB ||--|{ KUOTA_JALUR : "membagi"
+  PENDAFTARAN ||--o{ DOKUMEN : "melampirkan"
+  JENIS_DOKUMEN ||--o{ DOKUMEN : "mengategorikan"
+  JENIS_DOKUMEN ||--o{ PERSYARATAN_JALUR : "disyaratkan"
+  PENDAFTARAN ||--o{ RIWAYAT_STATUS : "dicatat"
+  PENGGUNA ||--o{ RIWAYAT_STATUS : "mengubah"
+  PENGGUNA {
+    int id PK
+    varchar nama
+    varchar email UK
+    varchar no_hp
+    varchar password_hash
+    enum peran
+  }
+  CALON_MURID {
+    int id PK
+    int pengguna_id FK
+    char nik UK
+    char nisn
+    varchar nama_lengkap
+    enum jenis_kelamin
+    date tanggal_lahir
+    varchar alamat
+    char no_kk
+    date tgl_terbit_kk
+    numeric jarak_ke_sekolah_km
+    bool penerima_pkh
+  }
+  ORANG_TUA_WALI {
+    int id PK
+    int calon_murid_id FK
+    enum hubungan
+    varchar nama
+    char nik
+    varchar pekerjaan
+    varchar penghasilan
+  }
+  PERIODE_SPMB {
+    int id PK
+    varchar tahun_ajaran UK
+    date tgl_mulai_daftar
+    date tgl_selesai_daftar
+    date tgl_pengumuman
+    date tgl_acuan_usia
+    smallint jumlah_rombel
+    smallint daya_tampung
+  }
+  KUOTA_JALUR {
+    int id PK
+    int periode_id FK
+    enum jalur
+    numeric persen
+  }
+  PENDAFTARAN {
+    int id PK
+    varchar nomor_pendaftaran UK
+    int calon_murid_id FK
+    int periode_id FK
+    enum jalur
+    enum status
+    smallint usia_bulan
+    bool perlu_rekomendasi_psikolog
+    timestamptz diajukan_pada
+  }
+  JENIS_DOKUMEN {
+    int id PK
+    varchar kode UK
+    varchar nama
+  }
+  PERSYARATAN_JALUR {
+    enum jalur PK
+    int jenis_dokumen_id PK
+    bool wajib
+  }
+  DOKUMEN {
+    int id PK
+    int pendaftaran_id FK
+    int jenis_dokumen_id FK
+    varchar path_file
+    varchar tipe_mime
+    int ukuran_byte
+    enum status_verifikasi
+  }
+  RIWAYAT_STATUS {
+    bigint id PK
+    int pendaftaran_id FK
+    enum status_lama
+    enum status_baru
+    int oleh_pengguna_id FK
+    timestamptz waktu
+  }
