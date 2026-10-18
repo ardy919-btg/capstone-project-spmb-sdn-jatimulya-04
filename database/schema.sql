@@ -21,7 +21,8 @@ CREATE TYPE status_dokumen   AS ENUM ('menunggu', 'valid', 'tidak_valid');
 CREATE TABLE pengguna (
   id             SERIAL PRIMARY KEY,
   nama           VARCHAR(100) NOT NULL,
-  email          VARCHAR(120) NOT NULL UNIQUE,
+  username       VARCHAR(50)  NOT NULL,          -- nama pengguna untuk masuk (boleh nama sendiri, mis. "Budi Santoso")
+  email          VARCHAR(120) UNIQUE,            -- opsional: hanya untuk lupa kata sandi
   no_hp          VARCHAR(15)  NOT NULL,
   password_hash  VARCHAR(100) NOT NULL,
   peran          peran_pengguna NOT NULL DEFAULT 'orang_tua',
@@ -29,6 +30,8 @@ CREATE TABLE pengguna (
   dibuat_pada    TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_no_hp CHECK (no_hp ~ '^08[0-9]{8,12}$')
 );
+-- Username unik tanpa membedakan huruf besar/kecil ("Budi" = "budi")
+CREATE UNIQUE INDEX ux_pengguna_username ON pengguna (lower(username));
 
 -- ---------- 2. Periode SPMB (jadwal & daya tampung per tahun ajaran) ----------
 CREATE TABLE periode_spmb (

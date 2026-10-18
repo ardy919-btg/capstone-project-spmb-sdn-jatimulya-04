@@ -36,6 +36,9 @@ const POLA = {
   nisn: /^[0-9]{10}$/,
   hp: /^08[0-9]{8,12}$/,
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  // Username: 3–50 karakter, boleh nama sendiri dengan spasi (huruf termasuk huruf beraksen, angka, spasi, titik, garis bawah,
+  // tanda hubung); diawali huruf/angka; tanpa '@' agar tidak tertukar dengan email.
+  username: /^[\p{L}\p{N}][\p{L}\p{N} ._-]{2,49}$/u,
   rtrw: /^[0-9]{1,3}$/,
   kodepos: /^[0-9]{5}$/,
   tanggal: /^\d{4}-\d{2}-\d{2}$/,
@@ -137,4 +140,15 @@ function samarkanNama(nama) {
   return [k[0], ...k.slice(1).map(x => x[0].toUpperCase() + '.')].join(' ');
 }
 
-module.exports = { hitungUsiaBulan, klasifikasiUsia, kkMemenuhiSyaratDomisili, validasiFormulir, ortuBelumLengkap, dokumenWajib, prosesSeleksi, samarkanNama, POLA };
+/** Rapikan username: buang spasi di awal/akhir dan spasi ganda ("  Budi   Santoso " -> "Budi Santoso"). */
+const rapikanUsername = u => String(u ?? '').trim().replace(/\s+/g, ' ');
+/** Pesan galat username, atau null bila valid. */
+function cekUsername(u) {
+  if (!u) return 'Username wajib diisi';
+  if (u.includes('@')) return 'Username tidak boleh memuat tanda @ (email diisi di kolom Email)';
+  if (!POLA.username.test(u)) return 'Username 3–50 karakter: huruf, angka, spasi, titik, garis bawah, atau tanda hubung';
+  return null;
+}
+
+module.exports = { hitungUsiaBulan, klasifikasiUsia, kkMemenuhiSyaratDomisili, validasiFormulir, ortuBelumLengkap, dokumenWajib, prosesSeleksi, samarkanNama,
+  rapikanUsername, cekUsername, POLA };

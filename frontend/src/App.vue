@@ -21,7 +21,8 @@
             <Ikon nama="bawah" :ukuran="16" class="caret" />
           </button>
           <div v-if="menuProfil" class="dropdown" role="menu">
-            <div class="dropdown-kepala"><strong>{{ sesi.pengguna?.nama }}</strong><small>{{ sesi.pengguna?.email }}</small></div>
+            <div class="dropdown-kepala"><strong>{{ sesi.pengguna?.nama }}</strong>
+              <small v-if="sesi.pengguna?.username">@{{ sesi.pengguna.username }}</small><small v-if="sesi.pengguna?.email">{{ sesi.pengguna.email }}</small></div>
             <RouterLink to="/profil" role="menuitem" @click="menuProfil = false"><Ikon nama="pengguna" :ukuran="17" />Profil Saya</RouterLink>
             <RouterLink to="/profil#sandi" role="menuitem" @click="menuProfil = false"><Ikon nama="kunci" :ukuran="17" />Ganti Kata Sandi</RouterLink>
             <button type="button" role="menuitem" class="keluar" @click="logout"><Ikon nama="keluar" :ukuran="17" />Keluar</button>

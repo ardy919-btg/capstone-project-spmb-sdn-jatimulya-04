@@ -3,7 +3,7 @@
 Capstone Project STSI4440, Kelompok C. Teknologi: Vue.js 3 + Node.js/Express + PostgreSQL 16 + Tesseract OCR.
 
 ## Fitur
-- **Orang tua/wali:** registrasi, isi otomatis formulir dari foto KK/akta (OCR), formulir 4 langkah, unggah dokumen,
+- **Orang tua/wali:** registrasi dengan username (email opsional), isi otomatis formulir dari foto KK/akta (OCR), formulir 4 langkah, unggah dokumen,
   pengajuan, perbaikan berkas, bukti pendaftaran, status hasil, konfirmasi daftar ulang.
 - **Panitia:** verifikasi per dokumen (dengan pratinjau berkas), status terverifikasi/perlu perbaikan,
   pengaturan jadwal–daya tampung–kuota, pratinjau peringkat seleksi, penetapan & pengumuman hasil.
@@ -39,21 +39,26 @@ dan mutasi dilimpahkan ke domisili (lihat `backend/src/aturan.js`).
    npm run build    (hasil build dilayani backend di http://localhost:3000)
    ```
 
-Akun petugas bawaan (WAJIB diganti sebelum dipakai sungguhan, lewat menu Profil → Ganti Kata Sandi):
-- panitia@sdnjatimulya04.sch.id / Panitia#2026
-- kepsek@sdnjatimulya04.sch.id / Kepsek#2026
-- admin@sdnjatimulya04.sch.id / Admin#2026 — Admin Sekolah: menu **Pengguna** untuk menambah/mengubah akun panitia,
-  kepala sekolah, dan admin (termasuk email), reset kata sandi, serta menonaktifkan akun; akun orang tua/wali hanya dilihat & direset sandinya.
+**Login memakai username** (boleh nama sendiri, mis. `Budi Santoso`) **atau email**. Email bersifat **opsional** — hanya
+dipakai untuk "Lupa kata sandi"; orang tua tanpa email yang lupa kata sandi dibantu reset oleh panitia/Admin (menu Pengguna).
 
-Basis data yang sudah berjalan sebelum ada peran Admin cukup dimigrasi (data tidak dihapus):
-`psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql`
+Akun petugas bawaan (WAJIB diganti sebelum dipakai sungguhan, lewat menu Profil → Ganti Kata Sandi):
+- username `panitia` / Panitia#2026 (atau panitia@sdnjatimulya04.sch.id)
+- username `kepsek` / Kepsek#2026 (atau kepsek@sdnjatimulya04.sch.id)
+- username `admin` / Admin#2026 (atau admin@sdnjatimulya04.sch.id) — Admin Sekolah: menu **Pengguna** untuk menambah/mengubah
+  akun panitia, kepala sekolah, dan admin (termasuk username & email), reset kata sandi, serta menonaktifkan akun;
+  akun orang tua/wali hanya dilihat & direset sandinya.
+
+Basis data yang sudah berjalan sebelumnya cukup dimigrasi berurutan (data tidak dihapus):
+`psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql` lalu `-f database/migrasi_002_username.sql`
+(akun lama otomatis mendapat username dari bagian email sebelum `@`).
 
 ## Deploy ke VPS
 Panduan lengkap (Nginx + PM2 + Certbot, subdomain `spmb-sdn04-jatimulya.ardysoft.com`): [docs/deploy-vps.md](docs/deploy-vps.md).
 Berkas pendukung ada di folder `deploy/`.
 
 ## Pengujian
-- `tests/jalankan.sh` — reset basis data, jalankan 3 server (22 Jun, 15 Okt, 3 Jul 2026), lalu 64 skenario black-box.
+- `tests/jalankan.sh` — reset basis data, jalankan 3 server (22 Jun, 15 Okt, 3 Jul 2026), lalu 67 skenario black-box.
 - `tests/jalankan_ui.sh` — reset basis data, isi data contoh fiktif, lalu uji end-to-end Playwright + tangkapan layar.
 - `tests/ocr/uji_ocr.js` — mengukur akurasi OCR terhadap contoh KK/akta fiktif (`tests/ocr/buat_contoh.py`).
 

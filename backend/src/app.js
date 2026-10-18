@@ -60,35 +60,52 @@ async function wajibLogin(req, _res, next) {
   next();
 }
 
+/** Pelanggaran keunikan username/email -> 409 dengan pesan pada isian yang tepat. */
+function unikDipakai(err) {
+  if (err.code !== '23505') throw err;
+  if (/username/.test(err.constraint || ''))
+    throw new HttpError(409, 'Username sudah dipakai. Coba variasi lain, mis. ditambah angka.', { username: 'Username sudah dipakai, coba yang lain (mis. ditambah angka)' });
+  throw new HttpError(409, 'Email sudah terdaftar', { email: 'Email sudah terdaftar' });
+}
+/** Email opsional: kosong -> null; diisi -> harus valid. Mengembalikan [nilai, pesan galat|null]. */
+function emailOpsional(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return [null, null];
+  return A.POLA.email.test(s) ? [s.toLowerCase(), null] : [null, 'Format email tidak valid (kosongkan bila tidak punya email)'];
+}
+/** Isian login: username atau email; field lama "email" tetap diterima. */
+const isianLogin = b => String(b?.login ?? b?.email ?? '').trim().replace(/\s+/g, ' ');
+
+// Akun orang tua: USERNAME untuk masuk (boleh nama sendiri, mis. "Budi Santoso"); email opsional (untuk lupa kata sandi)
 app.post('/api/auth/daftar', async (req, res) => {
-  const { nama, email, no_hp, password } = req.body || {};
+  const { nama, no_hp, password } = req.body || {};
+  const username = A.rapikanUsername(req.body?.username);
+  const [email, galatEmail] = emailOpsional(req.body?.email);
   const e = {};
   if (!nama || nama.trim().length < 3) e.nama = 'Nama minimal 3 karakter';
-  if (!email || !A.POLA.email.test(email)) e.email = 'Format email tidak valid';
+  const galatUsername = A.cekUsername(username); if (galatUsername) e.username = galatUsername;
+  if (galatEmail) e.email = galatEmail;
   if (!no_hp || !A.POLA.hp.test(no_hp)) e.no_hp = 'Nomor HP diawali 08, 10-14 digit';
   if (!password || password.length < 8 || !/[0-9]/.test(password) || !/[A-Za-z]/.test(password))
     e.password = 'Kata sandi minimal 8 karakter, kombinasi huruf dan angka';
   if (Object.keys(e).length) throw new HttpError(422, 'Data akun belum valid', e);
   const hash = await bcrypt.hash(password, 10);
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO pengguna (nama, email, no_hp, password_hash) VALUES ($1, lower($2), $3, $4) RETURNING id, nama, email, peran`,
-      [nama.trim(), email.trim(), no_hp, hash]);
-    res.status(201).json({ pengguna: rows[0] });
-  } catch (err) {
-    if (err.code === '23505') throw new HttpError(409, 'Email sudah terdaftar', { email: 'Email sudah terdaftar' });
-    throw err;
-  }
+  const { rows } = await pool.query(
+    `INSERT INTO pengguna (nama, username, email, no_hp, password_hash) VALUES ($1, $2, $3, $4, $5) RETURNING id, nama, username, email, peran`,
+    [nama.trim(), username, email, no_hp, hash]).catch(unikDipakai);
+  res.status(201).json({ pengguna: rows[0] });
 });
 
+// Masuk dengan username ATAU email (tidak membedakan huruf besar/kecil)
 app.post('/api/auth/masuk', async (req, res) => {
-  const { email, password } = req.body || {};
-  const { rows } = await pool.query(`SELECT * FROM pengguna WHERE email = lower($1)`, [email || '']);
+  const login = isianLogin(req.body);
+  const { password } = req.body || {};
+  const { rows } = await pool.query(`SELECT * FROM pengguna WHERE lower(username) = lower($1) OR email = lower($1)`, [login]);
   const u = rows[0];
-  if (!u || !(await bcrypt.compare(password || '', u.password_hash))) throw new HttpError(401, 'Email atau kata sandi salah');
+  if (!u || !(await bcrypt.compare(password || '', u.password_hash))) throw new HttpError(401, 'Username/email atau kata sandi salah');
   if (!u.aktif) throw new HttpError(403, 'Akun dinonaktifkan. Hubungi Admin Sekolah.');
   const token = jwt.sign({ id: u.id, nama: u.nama, peran: u.peran }, JWT_SECRET, { expiresIn: '8h' });
-  res.json({ token, pengguna: { id: u.id, nama: u.nama, email: u.email, peran: u.peran } });
+  res.json({ token, pengguna: { id: u.id, nama: u.nama, username: u.username, email: u.email, peran: u.peran } });
 });
 
 // ---------- Lupa kata sandi: tautan reset lewat email ----------
@@ -99,24 +116,27 @@ const rahasiaReset = hash => JWT_SECRET + ':reset:' + hash;
 const alamatAplikasi = () => (process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/+$/, '');
 
 app.post('/api/auth/lupa-sandi', batasLaju(5, 15 * 60_000), async (req, res) => {
-  const email = String(req.body?.email || '').trim();
-  if (!A.POLA.email.test(email)) throw new HttpError(422, 'Format email tidak valid', { email: 'Format email tidak valid' });
-  const { rows: [u] } = await pool.query(`SELECT id, nama, email, password_hash, aktif FROM pengguna WHERE email = lower($1)`, [email]);
-  if (u?.aktif) {
+  // Boleh username atau email; tautan hanya dapat dikirim bila akun memiliki email
+  const login = isianLogin(req.body);
+  if (!login) throw new HttpError(422, 'Isi username atau email', { login: 'Isi username atau email akun Anda' });
+  const { rows: [u] } = await pool.query(
+    `SELECT id, nama, username, email, password_hash, aktif FROM pengguna WHERE lower(username) = lower($1) OR email = lower($1)`, [login]);
+  if (u?.aktif && u.email) {
     const token = jwt.sign({ id: u.id, tujuan: 'reset-sandi' }, rahasiaReset(u.password_hash), { expiresIn: '30m' });
     const tautan = `${alamatAplikasi()}/reset-sandi?token=${encodeURIComponent(token)}`;
-    const teks = `Yth. ${u.nama},\n\nKami menerima permintaan atur ulang kata sandi akun SPMB Online SDN Jatimulya 04 untuk ${u.email}.\n`
+    const teks = `Yth. ${u.nama},\n\nKami menerima permintaan atur ulang kata sandi akun SPMB Online SDN Jatimulya 04 (username: ${u.username}).\n`
       + `Buka tautan berikut untuk membuat kata sandi baru (berlaku 30 menit, sekali pakai):\n${tautan}\n\n`
       + `Abaikan email ini bila Anda tidak memintanya; kata sandi Anda tidak berubah.\n\nPanitia SPMB SDN Jatimulya 04`;
-    const html = `<p>Yth. ${u.nama.replace(/[<>&]/g, '')},</p><p>Kami menerima permintaan atur ulang kata sandi akun <b>SPMB Online SDN Jatimulya 04</b> untuk ${u.email}.</p>`
+    const html = `<p>Yth. ${u.nama.replace(/[<>&]/g, '')},</p><p>Kami menerima permintaan atur ulang kata sandi akun <b>SPMB Online SDN Jatimulya 04</b> (username: <b>${u.username}</b>).</p>`
       + `<p><a href="${tautan}" style="display:inline-block;padding:10px 18px;background:#b42318;color:#fff;border-radius:8px;text-decoration:none">Buat Kata Sandi Baru</a></p>`
       + `<p style="color:#5b6475">Tautan berlaku 30 menit dan hanya dapat dipakai sekali. Abaikan email ini bila Anda tidak memintanya; kata sandi Anda tidak berubah.</p>`
       + `<p>Panitia SPMB SDN Jatimulya 04</p>`;
     try { await surel.kirim({ ke: u.email, subjek: 'Atur ulang kata sandi SPMB SDN Jatimulya 04', teks, html }); }
     catch (err) { console.error('Gagal mengirim email reset:', err.message); throw new HttpError(503, 'Email belum dapat dikirim saat ini. Coba lagi nanti atau hubungi Admin Sekolah.'); }
   }
-  // Jawaban sama untuk email terdaftar maupun tidak (tidak membocorkan daftar email)
-  res.json({ pesan: 'Jika email tersebut terdaftar, tautan untuk membuat kata sandi baru telah dikirim. Periksa kotak masuk atau folder spam.' });
+  // Jawaban sama untuk akun yang ada maupun tidak (tidak membocorkan daftar akun)
+  res.json({ pesan: 'Jika akun ditemukan dan memiliki email, tautan untuk membuat kata sandi baru telah dikirim ke email tersebut. '
+    + 'Periksa kotak masuk atau folder spam. Bila akun tidak memakai email, hubungi panitia/Admin Sekolah untuk mengatur ulang kata sandi.' });
 });
 
 app.post('/api/auth/reset-sandi', batasLaju(10, 15 * 60_000), async (req, res) => {
@@ -133,25 +153,27 @@ app.post('/api/auth/reset-sandi', batasLaju(10, 15 * 60_000), async (req, res) =
 });
 
 // ---------- Profil pengguna (semua peran) ----------
-const KOLOM_PROFIL = 'id, nama, email, no_hp, peran, dibuat_pada';
+const KOLOM_PROFIL = 'id, nama, username, email, no_hp, peran, dibuat_pada';
 const sandiValid = s => !!s && s.length >= 8 && /[0-9]/.test(s) && /[A-Za-z]/.test(s);
 app.get('/api/profil', wajibLogin, async (req, res) => {
   const { rows: [p] } = await pool.query(`SELECT ${KOLOM_PROFIL} FROM pengguna WHERE id = $1`, [req.pengguna.id]);
   if (!p) throw new HttpError(404, 'Akun tidak ditemukan');
   res.json(p);
 });
-/** Ubah nama dan nomor HP. Email (dipakai untuk masuk) dan peran tidak dapat diubah sendiri. */
+/** Ubah nama, nomor HP, dan email (opsional, untuk lupa kata sandi). Username & peran diubah lewat Admin Sekolah. */
 app.put('/api/profil', wajibLogin, async (req, res) => {
   const { nama, no_hp } = req.body || {};
+  const [email, galatEmail] = emailOpsional(req.body?.email);
   const e = {};
   if (!nama || nama.trim().length < 3) e.nama = 'Nama minimal 3 karakter';
   if (!no_hp || !A.POLA.hp.test(no_hp)) e.no_hp = 'Nomor HP diawali 08, 10-14 digit';
+  if (galatEmail) e.email = galatEmail;
   if (Object.keys(e).length) throw new HttpError(422, 'Data profil belum valid', e);
-  const { rows: [p] } = await pool.query(`UPDATE pengguna SET nama = $2, no_hp = $3 WHERE id = $1 RETURNING ${KOLOM_PROFIL}`,
-    [req.pengguna.id, nama.trim(), no_hp]);
+  const { rows: [p] } = await pool.query(`UPDATE pengguna SET nama = $2, no_hp = $3, email = $4 WHERE id = $1 RETURNING ${KOLOM_PROFIL}`,
+    [req.pengguna.id, nama.trim(), no_hp, email]).catch(unikDipakai);
   // token baru agar nama di sesi ikut berubah
   const token = jwt.sign({ id: p.id, nama: p.nama, peran: p.peran }, JWT_SECRET, { expiresIn: '8h' });
-  res.json({ profil: p, token, pengguna: { id: p.id, nama: p.nama, email: p.email, peran: p.peran } });
+  res.json({ profil: p, token, pengguna: { id: p.id, nama: p.nama, username: p.username, email: p.email, peran: p.peran } });
 });
 app.put('/api/profil/sandi', wajibLogin, async (req, res) => {
   const { sandi_lama, sandi_baru } = req.body || {};
@@ -637,7 +659,8 @@ app.use('/api/rekap', rekap);
 const admin = express.Router();
 admin.use(wajibLogin, peran('admin'));
 const PERAN_PETUGAS = ['panitia', 'kepala_sekolah', 'admin'];
-const KOLOM_PENGGUNA = 'u.id, u.nama, u.email, u.no_hp, u.peran, u.aktif, u.dibuat_pada';
+const KOLOM_PENGGUNA = 'u.id, u.nama, u.username, u.email, u.no_hp, u.peran, u.aktif, u.dibuat_pada';
+const KEMBALI_PENGGUNA = 'id, nama, username, email, no_hp, peran, aktif, dibuat_pada';
 
 admin.get('/pengguna', async (req, res) => {
   const { rows } = await pool.query(
@@ -649,16 +672,20 @@ admin.get('/pengguna', async (req, res) => {
   res.json(rows);
 });
 
+/** Validasi data petugas; mengembalikan { username, email } yang sudah dirapikan (email boleh kosong). */
 function validasiPengguna(b, { baru }) {
   const e = {};
+  const username = A.rapikanUsername(b.username);
+  const [email, galatEmail] = emailOpsional(b.email);
   if (!b.nama || b.nama.trim().length < 3) e.nama = 'Nama minimal 3 karakter';
-  if (!b.email || !A.POLA.email.test(b.email)) e.email = 'Format email tidak valid';
+  const galatUsername = A.cekUsername(username); if (galatUsername) e.username = galatUsername;
+  if (galatEmail) e.email = galatEmail;
   if (!b.no_hp || !A.POLA.hp.test(b.no_hp)) e.no_hp = 'Nomor HP diawali 08, 10-14 digit';
   if (!PERAN_PETUGAS.includes(b.peran)) e.peran = 'Pilih peran panitia, kepala sekolah, atau admin';
   if (baru && !sandiValid(b.password)) e.password = 'Kata sandi minimal 8 karakter, kombinasi huruf dan angka';
   if (Object.keys(e).length) throw new HttpError(422, 'Data pengguna belum valid', e);
+  return { username, email };
 }
-const emailDipakai = err => { if (err.code === '23505') throw new HttpError(409, 'Email sudah dipakai akun lain', { email: 'Email sudah dipakai akun lain' }); throw err; };
 async function ambilPengguna(id) {
   const { rows: [u] } = await pool.query(`SELECT ${KOLOM_PENGGUNA} FROM pengguna u WHERE u.id = $1`, [id]);
   if (!u) throw new HttpError(404, 'Pengguna tidak ditemukan');
@@ -672,11 +699,10 @@ async function pastikanAdminTersisa(id) {
 
 admin.post('/pengguna', async (req, res) => {
   const b = req.body || {};
-  validasiPengguna(b, { baru: true });
+  const { username, email } = validasiPengguna(b, { baru: true });
   const { rows: [u] } = await pool.query(
-    `INSERT INTO pengguna (nama, email, no_hp, password_hash, peran) VALUES ($1, lower($2), $3, $4, $5)
-     RETURNING id, nama, email, no_hp, peran, aktif, dibuat_pada`,
-    [b.nama.trim(), b.email.trim(), b.no_hp, await bcrypt.hash(b.password, 10), b.peran]).catch(emailDipakai);
+    `INSERT INTO pengguna (nama, username, email, no_hp, password_hash, peran) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${KEMBALI_PENGGUNA}`,
+    [b.nama.trim(), username, email, b.no_hp, await bcrypt.hash(b.password, 10), b.peran]).catch(unikDipakai);
   res.status(201).json(u);
 });
 
@@ -684,12 +710,11 @@ admin.put('/pengguna/:id', async (req, res) => {
   const lama = await ambilPengguna(+req.params.id);
   if (!PERAN_PETUGAS.includes(lama.peran)) throw new HttpError(403, 'Data akun orang tua/wali hanya dapat diubah oleh pemiliknya');
   const b = req.body || {};
-  validasiPengguna(b, { baru: false });
+  const { username, email } = validasiPengguna(b, { baru: false });
   if (lama.peran === 'admin' && b.peran !== 'admin') await pastikanAdminTersisa(lama.id);
   const { rows: [u] } = await pool.query(
-    `UPDATE pengguna SET nama = $2, email = lower($3), no_hp = $4, peran = $5 WHERE id = $1
-     RETURNING id, nama, email, no_hp, peran, aktif, dibuat_pada`,
-    [lama.id, b.nama.trim(), b.email.trim(), b.no_hp, b.peran]).catch(emailDipakai);
+    `UPDATE pengguna SET nama = $2, username = $3, email = $4, no_hp = $5, peran = $6 WHERE id = $1 RETURNING ${KEMBALI_PENGGUNA}`,
+    [lama.id, b.nama.trim(), username, email, b.no_hp, b.peran]).catch(unikDipakai);
   res.json(u);
 });
 
@@ -699,7 +724,7 @@ admin.put('/pengguna/:id/aktif', async (req, res) => {
   const aktif = !!req.body?.aktif;
   if (!aktif && lama.id === req.pengguna.id) throw new HttpError(409, 'Anda tidak dapat menonaktifkan akun Anda sendiri');
   if (!aktif && lama.peran === 'admin') await pastikanAdminTersisa(lama.id);
-  const { rows: [u] } = await pool.query(`UPDATE pengguna SET aktif = $2 WHERE id = $1 RETURNING id, nama, email, no_hp, peran, aktif, dibuat_pada`, [lama.id, aktif]);
+  const { rows: [u] } = await pool.query(`UPDATE pengguna SET aktif = $2 WHERE id = $1 RETURNING ${KEMBALI_PENGGUNA}`, [lama.id, aktif]);
   res.json(u);
 });
 

@@ -28,13 +28,14 @@ INSERT INTO persyaratan_jalur (jalur, jenis_dokumen_id, wajib)
 SELECT 'mutasi', id, true FROM jenis_dokumen WHERE kode = 'SK_MUTASI';
 
 -- Akun petugas contoh (ganti kata sandi sebelum dipakai sungguhan)
---   panitia@sdnjatimulya04.sch.id  / Panitia#2026
---   kepsek@sdnjatimulya04.sch.id   / Kepsek#2026
-INSERT INTO pengguna (nama, email, no_hp, password_hash, peran) VALUES
-  ('Panitia SPMB SDN Jatimulya 04', 'panitia@sdnjatimulya04.sch.id', '081200000001',
+--   username panitia / Panitia#2026   (atau email panitia@sdnjatimulya04.sch.id)
+--   username kepsek  / Kepsek#2026    (atau email kepsek@sdnjatimulya04.sch.id)
+--   username admin   / Admin#2026     (atau email admin@sdnjatimulya04.sch.id)
+INSERT INTO pengguna (nama, username, email, no_hp, password_hash, peran) VALUES
+  ('Panitia SPMB SDN Jatimulya 04', 'panitia', 'panitia@sdnjatimulya04.sch.id', '081200000001',
    '$2b$10$EhuauIWA08uZiZ6JlKDt4.DayYS06w33I.vY78cYoY3bk7Tenyl86', 'panitia'),
-  ('Kepala SDN Jatimulya 04', 'kepsek@sdnjatimulya04.sch.id', '081200000002',
+  ('Kepala SDN Jatimulya 04', 'kepsek', 'kepsek@sdnjatimulya04.sch.id', '081200000002',
    '$2b$10$7DgUGSXHcxYdE3SVu6qonewXJSlLSEC2koUWpnK4DLvQCfSTFB2hK', 'kepala_sekolah'),
   -- Admin Sekolah (operator): mengelola akun panitia/kepala sekolah; kata sandi bawaan Admin#2026
-  ('Admin SDN Jatimulya 04', 'admin@sdnjatimulya04.sch.id', '081200000003',
+  ('Admin SDN Jatimulya 04', 'admin', 'admin@sdnjatimulya04.sch.id', '081200000003',
    '$2b$10$1ol34C8BvnnvbyWTDnw4TedMvySHv5aOmOns0wbx/9QxK7IipWTwe', 'admin');

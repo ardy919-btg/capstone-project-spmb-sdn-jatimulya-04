@@ -5,7 +5,7 @@
       <div>
         <h2>{{ profil.nama || sesi.pengguna?.nama }}</h2>
         <span class="lencana peran">{{ LABEL_PERAN[profil.peran || sesi.pengguna?.peran] }}</span>
-        <p class="muted">{{ profil.email }}<template v-if="profil.dibuat_pada"> · terdaftar sejak {{ tglIndo(profil.dibuat_pada) }}</template></p>
+        <p class="muted">@{{ profil.username }}<template v-if="profil.email"> · {{ profil.email }}</template><template v-if="profil.dibuat_pada"> · terdaftar sejak {{ tglIndo(profil.dibuat_pada) }}</template></p>
       </div>
     </div>
 
@@ -16,12 +16,16 @@
       <form @submit.prevent="simpanAkun" novalidate>
         <div class="isian" :class="{ salah: eAkun.nama }"><label for="nama">Nama lengkap</label>
           <input id="nama" v-model.trim="f.nama" autocomplete="name" /><div class="galat" v-if="eAkun.nama">{{ eAkun.nama }}</div></div>
-        <div class="isian"><label for="email">Email (dipakai untuk masuk)</label>
-          <input id="email" :value="profil.email" disabled />
-          <div v-if="profil.peran === 'admin'" class="muted kecil">Email diubah melalui menu <RouterLink to="/admin/pengguna">Pengguna</RouterLink>.</div>
-          <div v-else class="muted kecil">Email dipakai sebagai nama pengguna untuk masuk. Hubungi Admin Sekolah bila perlu diganti.</div></div>
+        <div class="isian"><label for="username">Username (untuk masuk)</label>
+          <input id="username" :value="profil.username" disabled />
+          <div v-if="profil.peran === 'admin'" class="muted kecil">Username diubah melalui menu <RouterLink to="/admin/pengguna">Pengguna</RouterLink>.</div>
+          <div v-else class="muted kecil">Hubungi Admin Sekolah bila username perlu diganti.</div></div>
         <div class="isian" :class="{ salah: eAkun.no_hp }"><label for="hp">Nomor HP (WhatsApp)</label>
           <input id="hp" v-model.trim="f.no_hp" inputmode="numeric" placeholder="08xxxxxxxxxx" /><div class="galat" v-if="eAkun.no_hp">{{ eAkun.no_hp }}</div></div>
+        <div class="isian" :class="{ salah: eAkun.email }"><label for="email">Email <span class="opsional">(opsional)</span></label>
+          <input id="email" type="email" v-model.trim="f.email" autocomplete="email" placeholder="boleh dikosongkan" />
+          <div class="galat" v-if="eAkun.email">{{ eAkun.email }}</div>
+          <div v-else class="muted kecil">Isi agar bisa mengatur ulang kata sandi sendiri lewat email bila lupa. Bisa juga dipakai untuk masuk.</div></div>
         <button class="tombol" :disabled="sibukAkun">{{ sibukAkun ? 'Menyimpan…' : 'Simpan Perubahan' }}</button>
       </form>
     </div>
@@ -56,7 +60,7 @@ import KotakCentang from '../components/KotakCentang.vue';
 
 const route = useRoute();
 const profil = reactive({});
-const f = reactive({ nama: '', no_hp: '' });
+const f = reactive({ nama: '', no_hp: '', email: '' });
 const eAkun = ref({}), pesanAkun = reactive({ teks: '', jenis: '' }), sibukAkun = ref(false);
 const KOLOM_SANDI = [
   { id: 'sandi_lama', label: 'Kata sandi saat ini', ac: 'current-password' },
@@ -67,7 +71,7 @@ const s = reactive({ sandi_lama: '', sandi_baru: '', ulangi: '' });
 const eSandi = ref({}), pesanSandi = reactive({ teks: '', jenis: '' }), sibukSandi = ref(false), lihat = ref(false);
 const inisial = computed(() => (profil.nama || sesi.pengguna?.nama || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(k => k[0]).join('').toUpperCase());
 
-function isiProfil(p) { Object.assign(profil, p); f.nama = p.nama; f.no_hp = p.no_hp; }
+function isiProfil(p) { Object.assign(profil, p); f.nama = p.nama; f.no_hp = p.no_hp; f.email = p.email || ''; }
 
 async function simpanAkun() {
   sibukAkun.value = true; eAkun.value = {}; pesanAkun.teks = '';
@@ -107,6 +111,7 @@ onMounted(async () => {
 .peran { background: #fdecea; color: var(--merah-tua); }
 h3 { margin-top: 0; }
 .kecil { font-size: .8rem; margin-top: .2rem; }
+.opsional { font-weight: 500; color: var(--abu); }
 .lihat { margin: -4px 0 6px; }
 #sandi { scroll-margin-top: 90px; }
 </style>

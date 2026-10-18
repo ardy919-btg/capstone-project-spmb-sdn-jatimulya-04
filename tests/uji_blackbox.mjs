@@ -43,23 +43,33 @@ const ortu = [{ hubungan: 'ayah', nama: 'Rahmat Hidayat', nik: '3216051203880002
 const PDF = n => ({ nama: n, tipe: 'application/pdf' });
 
 async function akunBaru(email) {
-  await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Orang Tua Uji', email, no_hp: '085712345678', password: 'Sandi2026' } });
+  await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Orang Tua Uji', username: email.split('@')[0], email, no_hp: '085712345678', password: 'Sandi2026' } });
   return (await req(BASE, 'POST', '/auth/masuk', { body: { email, password: 'Sandi2026' } })).data.token;
 }
 
 // ---------- A. Akun ----------
-let r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Rahmat Hidayat', email: 'rahmat@contoh.id', no_hp: '081234567890', password: 'Jatimulya04' } });
-uji('TC-01', 'Registrasi akun dengan data valid', 'Nama, email, HP, sandi valid', 'Akun tersimpan (201)', r.status === 201, 'Akun berhasil dibuat');
-r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Rahmat Lagi', email: 'RAHMAT@contoh.id', no_hp: '081234567890', password: 'Jatimulya04' } });
+let r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Rahmat Hidayat', username: 'Rahmat Hidayat', email: 'rahmat@contoh.id', no_hp: '081234567890', password: 'Jatimulya04' } });
+uji('TC-01', 'Registrasi akun dengan data valid', 'Nama, username, email, HP, sandi valid', 'Akun tersimpan (201)', r.status === 201, 'Akun berhasil dibuat');
+r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Rahmat Lagi', username: 'rahmat2', email: 'RAHMAT@contoh.id', no_hp: '081234567890', password: 'Jatimulya04' } });
 uji('TC-02', 'Registrasi dengan email yang sudah terdaftar', 'Email sama (huruf besar)', 'Ditolak, pesan email sudah terdaftar (409)', r.status === 409, `${r.status} – ${r.data.pesan}`);
-r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Ab', email: 'salah-format', no_hp: '12345', password: 'pendek' } });
-uji('TC-03', 'Registrasi dengan format data salah', 'Nama 2 huruf, email/HP/sandi tidak valid', 'Ditolak dengan pesan per isian (422)',
-  r.status === 422 && Object.keys(r.data.detail || {}).length === 4, `${r.data.pesan}; ${Object.keys(r.data.detail || {}).length} isian ditandai merah`);
+r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Ab', username: 'a@b', email: 'salah-format', no_hp: '12345', password: 'pendek' } });
+uji('TC-03', 'Registrasi dengan format data salah', 'Nama 2 huruf, username/email/HP/sandi tidak valid', 'Ditolak dengan pesan per isian (422)',
+  r.status === 422 && Object.keys(r.data.detail || {}).length === 5, `${r.data.pesan}; ${Object.keys(r.data.detail || {}).length} isian ditandai merah`);
 r = await req(BASE, 'POST', '/auth/masuk', { body: { email: 'rahmat@contoh.id', password: 'Jatimulya04' } });
 const token = r.data.token;
 uji('TC-04', 'Login dengan email & sandi benar', 'rahmat@contoh.id / sandi benar', 'Berhasil, token sesi diterbitkan', r.status === 200 && !!token, token ? 'Berhasil masuk; sesi login dibuat' : 'Gagal masuk');
 r = await req(BASE, 'POST', '/auth/masuk', { body: { email: 'rahmat@contoh.id', password: 'SalahSandi1' } });
 uji('TC-05', 'Login dengan sandi salah', 'Sandi keliru', 'Ditolak (401)', r.status === 401, `${r.status} – ${r.data.pesan}`);
+// Username (boleh nama sendiri) & email opsional — untuk orang tua yang belum memiliki email
+r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Ujang Saepudin', username: 'Ujang Saepudin', no_hp: '081355566677', password: 'Kampung2026' } });
+uji('TC-65', 'Registrasi tanpa email dengan username nama sendiri', 'Username "Ujang Saepudin", email kosong', 'Akun tersimpan (201), email kosong',
+  r.status === 201 && r.data.pengguna?.email === null, `${r.status} – username ${r.data.pengguna?.username}, email ${r.data.pengguna?.email}`);
+r = await req(BASE, 'POST', '/auth/masuk', { body: { login: '  ujang   SAEPUDIN ', password: 'Kampung2026' } });
+uji('TC-66', 'Login memakai username (huruf besar/kecil & spasi berbeda)', '"  ujang   SAEPUDIN "', 'Berhasil masuk (200)',
+  r.status === 200 && r.data.pengguna?.username === 'Ujang Saepudin', `${r.status} – masuk sebagai ${r.data.pengguna?.username}`);
+r = await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Ujang Lain', username: 'ujang saepudin', no_hp: '081355566678', password: 'Kampung2026' } });
+uji('TC-67', 'Registrasi dengan username yang sudah dipakai', 'Username sama, huruf berbeda', 'Ditolak, pesan pada isian username (409)',
+  r.status === 409 && !!r.data.detail?.username, `${r.status} – ${r.data.pesan}`);
 r = await req(BASE, 'GET', '/pendaftaran/saya');
 uji('TC-06', 'Membuka halaman pendaftaran tanpa login', 'Tanpa token', 'Ditolak, diminta login (401)', r.status === 401, `${r.status} – ${r.data.pesan}`);
 
@@ -124,7 +134,7 @@ uji('TC-20', 'Mendaftarkan NIK calon murid yang sudah terdaftar di akun lain', '
 
 // ---------- E. Jadwal ----------
 try {
-  await fetch(BASE_LUAR + '/api/auth/daftar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama: 'Ortu Telat', email: 'telat@contoh.id', no_hp: '085700000000', password: 'Sandi2026' }) });
+  await fetch(BASE_LUAR + '/api/auth/daftar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nama: 'Ortu Telat', username: 'telat', email: 'telat@contoh.id', no_hp: '085700000000', password: 'Sandi2026' }) });
   const tk = (await req(BASE_LUAR, 'POST', '/auth/masuk', { body: { email: 'telat@contoh.id', password: 'Sandi2026' } })).data.token;
   await req(BASE_LUAR, 'PUT', '/pendaftaran/saya', { token: tk, body: { murid: murid({ nik: '3216050202190007', nama_lengkap: 'Eka Wijaya' }), orang_tua: ortu, jalur: 'domisili' } });
   r = await req(BASE_LUAR, 'POST', '/pendaftaran/saya/ajukan', { token: tk });
@@ -314,7 +324,7 @@ uji('TC-52', 'Memakai token berkas OCR milik akun lain atau yang sudah terpakai'
 const aisyah = (await req(BASE, 'GET', '/admin/pengguna', { token: ta })).data.find(u => u.nama_anak === 'Aisyah Putri Ramadhani');
 r = await req(BASE, 'DELETE', `/admin/calon-murid/${aisyah.calon_murid_id}`, { token: ta });
 uji('TC-55', 'Admin menghapus data pendaftaran setelah hasil diumumkan', 'Data Aisyah (diterima)', 'Ditolak; data peserta tidak dapat dihapus setelah pengumuman', r.status === 409, r.data.pesan);
-r = await req(BASE, 'POST', '/admin/pengguna', { token: ta, body: { nama: 'Siti Rohmah', email: 'siti.panitia@sdnjatimulya04.sch.id', no_hp: '081277788899', peran: 'panitia', password: 'Panitia2026' } });
+r = await req(BASE, 'POST', '/admin/pengguna', { token: ta, body: { nama: 'Siti Rohmah', username: 'siti.panitia', email: 'siti.panitia@sdnjatimulya04.sch.id', no_hp: '081277788899', peran: 'panitia', password: 'Panitia2026' } });
 const m56 = await req(BASE, 'POST', '/auth/masuk', { body: { email: 'siti.panitia@sdnjatimulya04.sch.id', password: 'Panitia2026' } });
 uji('TC-56', 'Admin menambah akun panitia baru', 'Nama, email, HP, peran panitia, kata sandi', 'Akun tersimpan dan dapat dipakai masuk sebagai panitia',
   r.status === 201 && m56.status === 200 && m56.data.pengguna?.peran === 'panitia', `Akun ${r.data.email} dibuat; masuk berhasil sebagai ${m56.data.pengguna?.peran}`);

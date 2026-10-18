@@ -32,7 +32,7 @@ def pilih_pekerjaan(page, idx, teks):
     page.get_by_role('option', name=teks, exact=True).click()
 
 def masuk(page, base, email, sandi):
-    page.goto(base + '/masuk'); page.get_by_label('Email').fill(email); page.get_by_label('Kata sandi').fill(sandi)
+    page.goto(base + '/masuk'); page.get_by_label('Username atau email').fill(email)   # boleh username atau email; page.get_by_label('Kata sandi').fill(sandi)
     page.get_by_role('button', name='Masuk').click()
 
 def tautan_reset():
@@ -49,7 +49,8 @@ with sync_playwright() as p:
     page.get_by_role('link', name='Buat Akun').first.click()
     page.get_by_role('button', name='Buat Akun').click()
     expect(page.get_by_text('Data akun belum valid')).to_be_visible(); shot(page, '02_daftar_akun_galat')
-    isi(page, 'Nama lengkap orang tua/wali', 'Hendra Gunawan'); isi(page, 'Email', 'hendra@contoh.id')
+    isi(page, 'Nama lengkap orang tua/wali', 'Hendra Gunawan'); isi(page, 'Username (untuk masuk)', 'Hendra Gunawan')
+    isi(page, 'Email (opsional)', 'hendra@contoh.id')
     isi(page, 'Nomor HP (WhatsApp)', '081311223344'); isi(page, 'Kata sandi', 'Jatimulya04')
     shot(page, '03_daftar_akun')
     page.get_by_role('button', name='Buat Akun').click()

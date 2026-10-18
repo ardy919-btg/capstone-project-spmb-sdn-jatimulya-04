@@ -17,7 +17,7 @@ const tp = (await req('POST', '/auth/masuk', { body: { email: 'panitia@sdnjatimu
 let i = 0;
 for (const [nama, jk, lahir, jarak, kel, jalur = 'domisili', ekstra] of [...NAMA, ...AF]) {
   i++; const email = `contoh${i}@contoh.id`;
-  await req('POST', '/auth/daftar', { body: { nama: 'Orang Tua ' + nama.split(' ')[0], email, no_hp: '0813' + String(10000000 + i), password: 'Contoh2026' } });
+  await req('POST', '/auth/daftar', { body: { nama: 'Orang Tua ' + nama.split(' ')[0], username: `contoh${i}`, email, no_hp: '0813' + String(10000000 + i), password: 'Contoh2026' } });
   const t = (await req('POST', '/auth/masuk', { body: { email, password: 'Contoh2026' } })).token;
   const nik = '32160' + String(5 + i % 3) + lahir.slice(8, 10).replace(/^(\d)/, d => (jk === 'P' ? String(+d + 4) : d)) + lahir.slice(5, 7) + lahir.slice(2, 4) + String(1000 + i).padStart(4, '0');
   await req('PUT', '/pendaftaran/saya', { token: t, body: { jalur, orang_tua: [{ hubungan: 'ayah', nama: 'Ayah ' + nama.split(' ')[0], no_hp: '0812' + String(20000000 + i),
