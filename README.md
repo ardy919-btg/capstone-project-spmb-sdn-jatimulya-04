@@ -53,13 +53,4 @@ Basis data yang sudah berjalan sebelumnya cukup dimigrasi berurutan (data tidak 
 `psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql` lalu `-f database/migrasi_002_username.sql`
 (akun lama otomatis mendapat username dari bagian email sebelum `@`).
 
-## Deploy ke VPS
-Panduan lengkap (Nginx + PM2 + Certbot, subdomain `spmb-sdn04-jatimulya.ardysoft.com`): [docs/deploy-vps.md](docs/deploy-vps.md).
-Berkas pendukung ada di folder `deploy/`.
-
-## Pengujian
-- `tests/jalankan.sh` — reset basis data, jalankan 3 server (22 Jun, 15 Okt, 3 Jul 2026), lalu 67 skenario black-box.
-- `tests/jalankan_ui.sh` — reset basis data, isi data contoh fiktif, lalu uji end-to-end Playwright + tangkapan layar.
-- `tests/ocr/uji_ocr.js` — mengukur akurasi OCR terhadap contoh KK/akta fiktif (`tests/ocr/buat_contoh.py`).
-
 Catatan: jumlah rombel pada `database/seed.sql` (2 rombel × 28 murid) masih sementara dan perlu disesuaikan dengan data sekolah.
