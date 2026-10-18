@@ -2,7 +2,7 @@
   {
     "id": "TC-01",
     "skenario": "Registrasi akun dengan data valid",
-    "masukan": "Nama, email, HP, sandi valid",
+    "masukan": "Nama, username, email, HP, sandi valid",
     "harapan": "Akun tersimpan",
     "aktual": "Akun berhasil dibuat",
     "hasil": "Berhasil"
@@ -18,9 +18,9 @@
   {
     "id": "TC-03",
     "skenario": "Registrasi dengan format data salah",
-    "masukan": "Nama 2 huruf, email/HP/sandi tidak valid",
+    "masukan": "Nama 2 huruf, username/email/HP/sandi tidak valid",
     "harapan": "Ditolak dengan pesan per isian",
-    "aktual": "Data akun belum valid; 4 isian ditandai merah",
+    "aktual": "Data akun belum valid; 5 isian ditandai merah",
     "hasil": "Berhasil"
   },
   {
@@ -36,7 +36,7 @@
     "skenario": "Login dengan sandi salah",
     "masukan": "Sandi keliru",
     "harapan": "Ditolak",
-    "aktual": "Email atau kata sandi salah",
+    "aktual": "Username/email atau kata sandi salah",
     "hasil": "Berhasil"
   },
   {
@@ -476,7 +476,7 @@
     "skenario": "Permintaan lupa kata sandi",
     "masukan": "Email terdaftar dan email yang tidak terdaftar",
     "harapan": "Pesan sama untuk keduanya; email berisi tautan hanya dikirim ke email terdaftar",
-    "aktual": "Jika email tersebut terdaftar, tautan untuk membuat kata sandi baru telah dikirim. Periksa kotak masuk atau folder spam. (tautan reset terkirim ke rahmat@contoh.id)",
+    "aktual": "Jika akun ditemukan dan memiliki email, tautan untuk membuat kata sandi baru telah dikirim ke email tersebut. Periksa kotak masuk atau folder spam. Bila akun tidak memakai email, hubungi panitia/Admin Sekolah untuk mengatur ulang kata sandi. (tautan reset terkirim ke rahmat@contoh.id)",
     "hasil": "Berhasil"
   },
   {
@@ -509,6 +509,30 @@
     "masukan": "RW \"-\" (daerah tanpa RW); pendidikan, pekerjaan, penghasilan ayah kosong",
     "harapan": "RW \"-\" diterima; pengajuan ditolak dan ketiga kolom ayah ditandai",
     "aktual": "RW tersimpan \"-\"; Pendidikan, pekerjaan, dan penghasilan ayah/ibu wajib diisi",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-65",
+    "skenario": "Registrasi tanpa email dengan username nama sendiri",
+    "masukan": "Username \"Ujang Saepudin\", email kosong",
+    "harapan": "Akun tersimpan, email kosong",
+    "aktual": "username Ujang Saepudin, email null",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-66",
+    "skenario": "Login memakai username (huruf besar/kecil & spasi berbeda)",
+    "masukan": "\"  ujang   SAEPUDIN \"",
+    "harapan": "Berhasil masuk",
+    "aktual": "masuk sebagai Ujang Saepudin",
+    "hasil": "Berhasil"
+  },
+  {
+    "id": "TC-67",
+    "skenario": "Registrasi dengan username yang sudah dipakai",
+    "masukan": "Username sama, huruf berbeda",
+    "harapan": "Ditolak, pesan pada isian username",
+    "aktual": "Username sudah dipakai. Coba variasi lain, mis. ditambah angka.",
     "hasil": "Berhasil"
   }
 ]

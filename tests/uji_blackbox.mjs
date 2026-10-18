@@ -43,7 +43,7 @@ const ortu = [{ hubungan: 'ayah', nama: 'Rahmat Hidayat', nik: '3216051203880002
 const PDF = n => ({ nama: n, tipe: 'application/pdf' });
 
 async function akunBaru(email) {
-  await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Orang Tua Uji', username: email.split('@')[0], email, no_hp: '085712345678', password: 'Sandi2026' } });
+  await req(BASE, 'POST', '/auth/daftar', { body: { nama: 'Orang Tua Uji', username: 'ortu.' + email.split('@')[0], email, no_hp: '085712345678', password: 'Sandi2026' } });
   return (await req(BASE, 'POST', '/auth/masuk', { body: { email, password: 'Sandi2026' } })).data.token;
 }
 

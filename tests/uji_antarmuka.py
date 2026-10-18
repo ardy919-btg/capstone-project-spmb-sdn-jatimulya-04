@@ -31,9 +31,11 @@ def pilih_pekerjaan(page, idx, teks):
     page.locator(f'#pk{idx}').click(); page.locator(f'#pk{idx}').fill(teks)
     page.get_by_role('option', name=teks, exact=True).click()
 
-def masuk(page, base, email, sandi):
-    page.goto(base + '/masuk'); page.get_by_label('Username atau email').fill(email)   # boleh username atau email; page.get_by_label('Kata sandi').fill(sandi)
+def masuk(page, base, email, sandi, foto=None):
+    page.goto(base + '/masuk'); page.get_by_label('Username atau email').fill(email); page.get_by_label('Kata sandi', exact=True).fill(sandi)   # boleh username atau email
+    if foto: shot(page, foto)
     page.get_by_role('button', name='Masuk').click()
+    page.wait_for_url(lambda u: '/masuk' not in u)   # tunggu sesi tersimpan sebelum berpindah halaman
 
 def tautan_reset():
     return re.findall(r'(/reset-sandi\?token=[\w.%-]+)', open(LOG, encoding='utf-8').read())[-1]
@@ -49,13 +51,15 @@ with sync_playwright() as p:
     page.get_by_role('link', name='Buat Akun').first.click()
     page.get_by_role('button', name='Buat Akun').click()
     expect(page.get_by_text('Data akun belum valid')).to_be_visible(); shot(page, '02_daftar_akun_galat')
-    isi(page, 'Nama lengkap orang tua/wali', 'Hendra Gunawan'); isi(page, 'Username (untuk masuk)', 'Hendra Gunawan')
-    isi(page, 'Email (opsional)', 'hendra@contoh.id')
+    page.reload()   # mulai dari formulir bersih agar tangkapan layar pengisian tidak memuat pesan galat lama
+    isi(page, 'Nama lengkap orang tua/wali', 'Hendra Gunawan'); page.get_by_label('Nama lengkap orang tua/wali', exact=True).blur()
+    expect(page.get_by_label('Username (untuk masuk)', exact=True)).to_have_value('Hendra Gunawan')   # username diusulkan dari nama
+    # email sengaja dikosongkan: orang tua yang belum memiliki email tetap dapat mendaftar
     isi(page, 'Nomor HP (WhatsApp)', '081311223344'); isi(page, 'Kata sandi', 'Jatimulya04')
     shot(page, '03_daftar_akun')
     page.get_by_role('button', name='Buat Akun').click()
     expect(page.get_by_role('heading', name='Pendaftaran Calon Murid')).to_be_visible()
-    langkah.append('Registrasi akun gagal saat kosong, berhasil saat valid, otomatis masuk')
+    langkah.append('Registrasi akun gagal saat kosong, lalu berhasil dengan username nama sendiri tanpa email, otomatis masuk')
 
     # ---------------- Langkah 1: pilihan cara & isi otomatis ----------------
     expect(page.get_by_text('Bagaimana Anda ingin mengisi data calon murid?')).to_be_visible(); shot(page, '04_pilihan_cara')
@@ -120,7 +124,7 @@ with sync_playwright() as p:
     # ---------------- Ponsel ----------------
     m = baru(390, 844, 2)
     m.goto(URL); expect(m.get_by_text('Daya Tampung')).to_be_visible(); shot(m, '11_beranda_ponsel', full=True)
-    masuk(m, URL, 'hendra@contoh.id', 'Jatimulya04'); expect(m.get_by_text(nomor)).to_be_visible(); shot(m, '12_status_ponsel', full=True)
+    masuk(m, URL, 'hendra gunawan', 'Jatimulya04'); expect(m.get_by_text(nomor)).to_be_visible(); shot(m, '12_status_ponsel', full=True)
     langkah.append('Tampilan responsif di ponsel (390 px) dan login ulang menampilkan status')
 
     # ---------------- Lupa & reset kata sandi (akun contoh1) ----------------
@@ -162,7 +166,7 @@ with sync_playwright() as p:
     masuk(ad, URL, 'admin@sdnjatimulya04.sch.id', 'Admin#2026'); ad.goto(URL + '/admin/pengguna')
     expect(ad.get_by_role('heading', name='Kelola Pengguna')).to_be_visible(); shot(ad, '24_admin_pengguna', full=True)
     ad.get_by_role('button', name='Tambah Pengguna').first.click()
-    ad.get_by_label('Nama lengkap').fill('Siti Rohmah'); ad.get_by_label('Email (nama pengguna untuk masuk)').fill('siti.panitia@sdnjatimulya04.sch.id')
+    ad.get_by_label('Nama lengkap').fill('Siti Rohmah'); ad.get_by_label('Username (untuk masuk)').fill('Siti Rohmah'); ad.get_by_label('Email (opsional)').fill('siti.panitia@sdnjatimulya04.sch.id')
     ad.get_by_label('Nomor HP').fill('081277788899'); ad.get_by_label('Peran').select_option('panitia'); ad.get_by_label('Kata sandi awal').fill('Panitia2026')
     shot(ad, '25_admin_tambah')
     ad.locator('button[form="form-pengguna"]').click()
@@ -185,10 +189,10 @@ with sync_playwright() as p:
     langkah.append('Cek status publik dengan nomor pendaftaran + tanggal lahir (nama disamarkan)')
 
     ot = baru()
-    masuk(ot, URL_UMUM, 'hendra@contoh.id', 'Jatimulya04'); expect(ot.get_by_text('diterima', exact=False).first).to_be_visible()
+    masuk(ot, URL_UMUM, 'Hendra Gunawan', 'Jatimulya04', foto='02b_masuk_username'); expect(ot.get_by_text('diterima', exact=False).first).to_be_visible()
     ot.get_by_role('button', name='Konfirmasi Daftar Ulang').click(); expect(ot.get_by_text('Daftar ulang berhasil dikonfirmasi.')).to_be_visible()
     shot(ot, '19_daftar_ulang', full=True)
-    langkah.append('Orang tua melihat hasil diterima dan mengonfirmasi daftar ulang')
+    langkah.append('Orang tua masuk dengan username, melihat hasil diterima, dan mengonfirmasi daftar ulang')
 
     ks = baru()
     masuk(ks, URL_UMUM, 'kepsek@sdnjatimulya04.sch.id', 'Kepsek#2026'); expect(ks.get_by_role('heading', name='Rekap Pendaftar SPMB')).to_be_visible()
