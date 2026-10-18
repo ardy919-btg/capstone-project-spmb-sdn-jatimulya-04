@@ -42,13 +42,6 @@ dan mutasi dilimpahkan ke domisili (lihat `backend/src/aturan.js`).
 **Login memakai username** (boleh nama sendiri, mis. `Budi Santoso`) **atau email**. Email bersifat **opsional** — hanya
 dipakai untuk "Lupa kata sandi"; orang tua tanpa email yang lupa kata sandi dibantu reset oleh panitia/Admin (menu Pengguna).
 
-Akun petugas bawaan (WAJIB diganti sebelum dipakai sungguhan, lewat menu Profil → Ganti Kata Sandi):
-- username `panitia` / Panitia#2026 (atau panitia@sdnjatimulya04.sch.id)
-- username `kepsek` / Kepsek#2026 (atau kepsek@sdnjatimulya04.sch.id)
-- username `admin` / Admin#2026 (atau admin@sdnjatimulya04.sch.id) — Admin Sekolah: menu **Pengguna** untuk menambah/mengubah
-  akun panitia, kepala sekolah, dan admin (termasuk username & email), reset kata sandi, serta menonaktifkan akun;
-  akun orang tua/wali hanya dilihat & direset sandinya.
-
 Basis data yang sudah berjalan sebelumnya cukup dimigrasi berurutan (data tidak dihapus):
 `psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql` lalu `-f database/migrasi_002_username.sql`
 (akun lama otomatis mendapat username dari bagian email sebelum `@`).
