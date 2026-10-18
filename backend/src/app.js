@@ -23,6 +23,9 @@ const sekarang = () => (process.env.SPMB_TANGGAL_SIMULASI ? `${hariIni()}T${new 
 const fmt = d => (d instanceof Date ? d.toISOString().slice(0, 10) : d);
 
 const app = express();
+// Di belakang reverse proxy (Nginx/Caddy) di server yang sama: TRUST_PROXY=loopback agar req.ip = IP pengunjung asli
+// (dipakai pembatas laju). Tanpa variabel ini (mis. di komputer lokal) perilaku tidak berubah.
+if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY);
 app.use(cors());
 app.use(express.json({ limit: '200kb' }));
 

@@ -48,6 +48,10 @@ Akun petugas bawaan (WAJIB diganti sebelum dipakai sungguhan, lewat menu Profil 
 Basis data yang sudah berjalan sebelum ada peran Admin cukup dimigrasi (data tidak dihapus):
 `psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql`
 
+## Deploy ke VPS
+Panduan lengkap (Nginx + PM2 + Certbot, subdomain `spmb-sdn04-jatimulya.ardysoft.com`): [docs/deploy-vps.md](docs/deploy-vps.md).
+Berkas pendukung ada di folder `deploy/`.
+
 ## Pengujian
 - `tests/jalankan.sh` — reset basis data, jalankan 3 server (22 Jun, 15 Okt, 3 Jul 2026), lalu 64 skenario black-box.
 - `tests/jalankan_ui.sh` — reset basis data, isi data contoh fiktif, lalu uji end-to-end Playwright + tangkapan layar.

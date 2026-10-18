@@ -27,3 +27,6 @@ npm-debug.log*
 # --- Berkas asisten/alat bantu lokal ---
 .claude/
 CLAUDE.md
+
+# --- Deploy VPS ---
+/deploy/.migrasi-selesai
