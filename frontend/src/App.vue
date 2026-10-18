@@ -5,8 +5,8 @@
         <span class="logo" aria-hidden="true">SD</span>
         <span><strong>SPMB Online</strong><small>SDN Jatimulya 04 · Kab. Bekasi</small></span>
       </RouterLink>
-      <nav class="menu" aria-label="Menu utama">
-        <RouterLink v-for="m in menu" :key="m.ke" :to="m.ke" class="pil" :class="{ aktif: m.aktif(route.path) }"
+      <nav class="menu" :class="{ padat: menu.length >= 6 }" aria-label="Menu utama">
+        <RouterLink v-for="m in menu" :key="m.ke" :to="m.ke" class="pil" :class="{ aktif: m.aktif(route.path) }" :title="m.label"
           :aria-current="m.aktif(route.path) ? 'page' : null">
           <Ikon :nama="m.ikon" :ukuran="17" /><span>{{ m.label }}</span>
         </RouterLink>
@@ -149,6 +149,20 @@ function kembali() {
 .dropdown .keluar { color: var(--merah); border-top: 1px solid var(--garis); border-radius: 0 0 8px 8px; margin-top: 4px; }
 .dropdown .keluar svg { color: var(--merah); }
 
+/* Menu tidak pernah terlipat ke baris kedua di layar lebar */
+@media (min-width: 761px) {
+  .menu { flex-wrap: nowrap; }
+  .pil { white-space: nowrap; }
+  /* Menu banyak (Admin: 6 menu): jarak dirapatkan */
+  .menu.padat { gap: 2px; }
+  .menu.padat .pil { padding: .45rem .6rem; gap: 6px; }
+}
+/* Laptop sempit + menu banyak: tampilkan ikon saja (nama muncul sebagai tooltip saat disorot) */
+@media (min-width: 761px) and (max-width: 1180px) {
+  .menu.padat .pil span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .menu.padat .pil { padding: .5rem; }
+  .menu.padat .pil svg { width: 19px; height: 19px; }
+}
 /* Layar kecil: menu turun ke baris sendiri dan dapat digeser; nama di chip disembunyikan */
 @media (max-width: 760px) {
   .baris { padding-top: 8px; padding-bottom: 6px; row-gap: 6px; }
