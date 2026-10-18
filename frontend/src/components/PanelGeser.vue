@@ -3,7 +3,7 @@
   <Teleport to="body">
     <div class="latar-panel" @mousedown.self="emit('tutup')">
       <section ref="panel" class="panel" role="dialog" aria-modal="true" :aria-labelledby="idJudul"
-        :style="{ width: lebar, transform: `translate(${pos.x}px, ${pos.y}px)` }" @keydown.esc="emit('tutup')">
+        :style="{ width: lebar, transform: `translate(${pos.x}px, ${pos.y}px)` }">
         <header class="panel-kepala" :class="{ geser: menggeser }" @pointerdown="mulaiGeser" title="Seret untuk memindahkan">
           <span v-if="ikon" class="panel-ikon"><Ikon :nama="ikon" :ukuran="20" /></span>
           <div class="panel-judul"><h3 :id="idJudul">{{ judul }}</h3><small v-if="subjudul">{{ subjudul }}</small></div>
@@ -43,8 +43,10 @@ function geser(ev) {
 }
 function selesai() { menggeser.value = false; window.removeEventListener('pointermove', geser); }
 
-onMounted(async () => { await nextTick(); panel.value?.querySelector('input, select, textarea')?.focus(); });
-onBeforeUnmount(() => window.removeEventListener('pointermove', geser));
+// Esc menutup panel di mana pun fokus berada (mis. setelah panel digeser)
+const escTutup = ev => { if (ev.key === 'Escape') emit('tutup'); };
+onMounted(async () => { window.addEventListener('keydown', escTutup); await nextTick(); panel.value?.querySelector('input, select, textarea')?.focus(); });
+onBeforeUnmount(() => { window.removeEventListener('pointermove', geser); window.removeEventListener('keydown', escTutup); });
 </script>
 
 <style scoped>

@@ -60,10 +60,36 @@
         <p v-for="k in kurang" :key="k" class="pesan galat">Belum diunggah: {{ k }}</p>
 
         <div v-if="pratinjau" class="pratinjau">
-          <div class="dok-atas"><strong>{{ pratinjau.nama }}</strong><button class="tombol sekunder kecil" @click="tutup">Tutup</button></div>
+          <div class="dok-atas"><strong>{{ pratinjau.nama }}</strong>
+            <span class="dok-aksi">
+              <button class="tombol kecil" @click="bukaBesar"><Ikon nama="perbesar" :ukuran="15" /> Tampilkan Dokumen</button>
+              <button class="tombol sekunder kecil" @click="tutup">Tutup</button>
+            </span></div>
           <iframe v-if="pratinjau.pdf" :src="pratinjau.url" title="Pratinjau dokumen"></iframe>
           <img v-else :src="pratinjau.url" alt="Pratinjau dokumen" />
         </div>
+
+        <!-- Tampilan besar: panel popup yang dapat digeser, cocok untuk dokumen lebar (KK landscape) -->
+        <PanelGeser v-if="besar && pratinjau" :judul="pratinjau.nama" ikon="berkas" lebar="min(1100px, calc(100vw - 32px))"
+          :subjudul="`${d.murid.nama_lengkap} · seret judul untuk memindahkan`" @tutup="besar = false">
+          <div v-if="!pratinjau.pdf" class="alat-zoom" role="group" aria-label="Ukuran tampilan">
+            <button type="button" class="tombol sekunder kecil" :disabled="iZoom === 0" aria-label="Perkecil" @click="iZoom--">−</button>
+            <span class="label-zoom">{{ ZOOM[iZoom].label }}</span>
+            <button type="button" class="tombol sekunder kecil" :disabled="iZoom === ZOOM.length - 1" aria-label="Perbesar" @click="iZoom++">+</button>
+            <button type="button" class="tombol sekunder kecil" :class="{ aktif: iZoom === 0 }" @click="iZoom = 0">Pas layar</button>
+            <button type="button" class="tombol sekunder kecil" :class="{ aktif: ZOOM[iZoom].nilai === 1 }" @click="iZoom = ZOOM.findIndex(z => z.nilai === 1)">100%</button>
+          </div>
+          <div class="bidang-dok" :class="{ pdf: pratinjau.pdf, pas: !pratinjau.pdf && iZoom === 0 }">
+            <iframe v-if="pratinjau.pdf" :src="pratinjau.url" title="Dokumen ukuran besar"></iframe>
+            <img v-else ref="gbrBesar" :src="pratinjau.url" alt="Dokumen ukuran besar"
+              :style="iZoom === 0 ? null : { width: lebarAsli * ZOOM[iZoom].nilai + 'px', maxWidth: 'none', maxHeight: 'none' }"
+              @load="lebarAsli = $event.target.naturalWidth" />
+          </div>
+          <template #kaki>
+            <a :href="pratinjau.url" target="_blank" rel="noopener" class="tombol sekunder">Buka di tab baru</a>
+            <button type="button" class="tombol" @click="besar = false">Tutup</button>
+          </template>
+        </PanelGeser>
 
         <template v-if="bisaUbah">
           <h3>Keputusan Verifikasi</h3>
@@ -89,6 +115,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { api, sesi, ambilBerkas, LABEL_JALUR, LABEL_STATUS, LABEL_DOK, tglIndo, usiaTeks } from '../api';
 import { toast, konfirmasi } from '../notifikasi';
 import Ikon from '../components/Ikon.vue';
+import PanelGeser from '../components/PanelGeser.vue';
 const route = useRoute(), router = useRouter();
 async function hapusPendaftaran() {
   const m = d.value.murid, pd = d.value.pendaftaran;
@@ -124,7 +151,12 @@ async function lihat(x) {
   try { const b = await ambilBerkas(`/panitia/dokumen/${x.id}/berkas`); pratinjau.value = { nama: x.jenis, url: URL.createObjectURL(b), pdf: x.tipe_mime === 'application/pdf' }; }
   catch (e) { tampil(e.message, 'galat'); }
 }
-function tutup() { if (pratinjau.value) URL.revokeObjectURL(pratinjau.value.url); pratinjau.value = null; }
+function tutup() { if (pratinjau.value) URL.revokeObjectURL(pratinjau.value.url); pratinjau.value = null; besar.value = false; }
+// Tampilan besar (popup): tingkat zoom untuk gambar; indeks 0 = pas layar
+const ZOOM = [{ nilai: 0, label: 'Pas layar' }, { nilai: 0.5, label: '50%' }, { nilai: 0.75, label: '75%' }, { nilai: 1, label: '100%' },
+  { nilai: 1.5, label: '150%' }, { nilai: 2, label: '200%' }];
+const besar = ref(false), iZoom = ref(0), lebarAsli = ref(0);
+function bukaBesar() { iZoom.value = 0; besar.value = true; }
 onMounted(muat); onUnmounted(tutup);
 </script>
 
@@ -153,6 +185,19 @@ h3 { margin-top: 14px; } h3:first-child { margin-top: 0; }
 .pratinjau { border: 1px solid var(--garis); border-radius: 8px; padding: 10px; margin: 10px 0; }
 .pratinjau iframe { width: 100%; height: 420px; border: 0; margin-top: 8px; }
 .pratinjau img { max-width: 100%; margin-top: 8px; }
+.dok-aksi { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.dok-aksi .tombol { display: inline-flex; align-items: center; gap: 6px; }
+/* Tampilan besar di panel popup */
+.alat-zoom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.alat-zoom .tombol { min-width: 34px; justify-content: center; }
+.alat-zoom .tombol.aktif { border-color: var(--merah); color: var(--merah); }
+.label-zoom { min-width: 70px; text-align: center; font-weight: 700; font-size: .9rem; }
+.bidang-dok { height: min(72vh, 760px); overflow: auto; background: #eef1f5; border-radius: 10px; border: 1px solid var(--garis); margin-bottom: 12px; }
+.bidang-dok.pas { display: flex; align-items: center; justify-content: center; }
+/* Pas layar: gambar (termasuk foto kecil) diperbesar/diperkecil agar memenuhi bidang tanpa terpotong */
+.bidang-dok.pas img { width: 100%; height: 100%; object-fit: contain; background: transparent; box-shadow: none; }
+.bidang-dok img { display: block; margin: 0 auto; background: #fff; box-shadow: 0 2px 10px rgba(27, 35, 51, .12); }
+.bidang-dok iframe { width: 100%; height: 100%; border: 0; display: block; }
 textarea { font: inherit; }
 @media (max-width: 860px) { .dua { grid-template-columns: 1fr; } }
 </style>
