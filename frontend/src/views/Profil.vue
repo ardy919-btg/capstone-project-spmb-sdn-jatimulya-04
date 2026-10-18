@@ -40,7 +40,7 @@
           </div>
           <div class="galat" v-if="eSandi[k.id]">{{ eSandi[k.id] }}</div>
         </div>
-        <label class="lihat"><input type="checkbox" v-model="lihat" /> Tampilkan kata sandi</label>
+        <div class="lihat"><KotakCentang v-model="lihat">Tampilkan kata sandi</KotakCentang></div>
         <p class="muted kecil">Minimal 8 karakter, kombinasi huruf dan angka.</p>
         <button class="tombol" :disabled="sibukSandi">{{ sibukSandi ? 'Memproses…' : 'Ganti Kata Sandi' }}</button>
       </form>
@@ -52,6 +52,7 @@
 import { reactive, ref, computed, onMounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { api, sesi, simpanSesi, LABEL_PERAN, tglIndo } from '../api';
+import KotakCentang from '../components/KotakCentang.vue';
 
 const route = useRoute();
 const profil = reactive({});
@@ -106,7 +107,6 @@ onMounted(async () => {
 .peran { background: #fdecea; color: var(--merah-tua); }
 h3 { margin-top: 0; }
 .kecil { font-size: .8rem; margin-top: .2rem; }
-.lihat { display: flex; align-items: center; gap: 8px; font-weight: 500; margin: -4px 0 4px; }
-.lihat input { width: auto; }
+.lihat { margin: -4px 0 6px; }
 #sandi { scroll-margin-top: 90px; }
 </style>

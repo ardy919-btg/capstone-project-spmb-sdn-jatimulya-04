@@ -13,7 +13,7 @@
           <div class="isian" :class="{ salah: e.ulangi }"><label for="ulangi">Ulangi kata sandi baru</label>
             <input id="ulangi" :type="lihat ? 'text' : 'password'" v-model="ulangi" autocomplete="new-password" />
             <div class="galat" v-if="e.ulangi">{{ e.ulangi }}</div></div>
-          <label class="lihat"><input type="checkbox" v-model="lihat" /> Tampilkan kata sandi</label>
+          <div class="lihat"><KotakCentang v-model="lihat">Tampilkan kata sandi</KotakCentang></div>
           <p class="muted kecil">Minimal 8 karakter, kombinasi huruf dan angka.</p>
           <button class="tombol" :disabled="sibuk">{{ sibuk ? 'Menyimpan…' : 'Simpan Kata Sandi Baru' }}</button>
         </form>
@@ -30,6 +30,7 @@
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { api } from '../api';
+import KotakCentang from '../components/KotakCentang.vue';
 const token = String(useRoute().query.token || '');
 const baru = ref(''), ulangi = ref(''), lihat = ref(false), e = ref({}), galat = ref(''), berhasil = ref(''), sibuk = ref(false), kedaluwarsa = ref(false);
 async function simpan() {
@@ -45,6 +46,5 @@ async function simpan() {
 <style scoped>
 .sempit { max-width: 440px; }
 .kecil { font-size: .82rem; }
-.lihat { display: flex; align-items: center; gap: 8px; font-weight: 500; margin: -4px 0 4px; }
-.lihat input { width: auto; }
+.lihat { margin: -4px 0 6px; }
 </style>
