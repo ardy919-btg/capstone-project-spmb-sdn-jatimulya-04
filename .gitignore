@@ -29,5 +29,4 @@ npm-debug.log*
 CLAUDE.md
 
 # --- Deploy VPS ---
-/deploy/
-/doc/deploy-vps.md
+/deploy/.migrasi-selesai
