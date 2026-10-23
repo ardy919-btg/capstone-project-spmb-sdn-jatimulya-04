@@ -89,6 +89,7 @@
         </div>
         <p v-else-if="!data.murid" class="muted">Ingin lebih cepat? <button type="button" class="tautan" @click="cara = 'otomatis'">Isi otomatis dari KK dan Akta Kelahiran</button></p>
         <p class="muted">Isi sesuai Kartu Keluarga dan Akta Kelahiran. Kolom berlatar kuning terisi otomatis dari OCR.</p>
+        <PeringatanKesesuaian :daftar="data.kesesuaian" />
         <div class="kisi">
           <Isian v-model="m.nama_lengkap" label="Nama lengkap" k="murid.nama_lengkap" :e="e" />
           <Isian v-model="m.nik" label="NIK (16 digit)" k="murid.nik" :e="e" inputmode="numeric" maxlength="16" />
@@ -217,10 +218,11 @@
           <tr><td>Jalur</td><td>{{ LABEL_JALUR[pd?.jalur] }}</td></tr>
           <tr><td>Dokumen</td><td>{{ data.dokumen.length }} dari {{ dokumenDibutuhkan.length }} terunggah</td></tr>
         </table>
+        <PeringatanKesesuaian :daftar="data.kesesuaian" />
         <label class="pernyataan"><input type="checkbox" v-model="setuju" style="width:auto" />
           Saya menyatakan data yang diisi benar dan bersedia bertanggung jawab secara hukum atas kebenarannya.</label>
         <div class="kaki-form"><button type="button" class="tombol sekunder" @click="langkah = 2">Kembali</button>
-          <button type="button" class="tombol" :disabled="!setuju || sibuk" @click="ajukan">Ajukan Pendaftaran</button></div>
+          <button type="button" class="tombol" :disabled="!setuju || sibuk" @click="ajukan()">Ajukan Pendaftaran</button></div>
       </section>
     </template>
   </div>
@@ -231,7 +233,8 @@ import { ref, reactive, computed, onMounted, h } from 'vue';
 import { api, LABEL_JALUR, LABEL_STATUS, LABEL_DOK, tglIndo } from '../api';
 import InputTanggal from '../components/InputTanggal.vue';
 import PilihCari from '../components/PilihCari.vue';
-import { toast, pilih } from '../notifikasi';
+import { toast, pilih, konfirmasi } from '../notifikasi';
+import { AGAMA, PENDIDIKAN, PENGHASILAN, PEKERJAAN, namaSama, bedaIdentitas } from '../pilihan';
 
 const dariOcr = reactive(new Set());
 
@@ -248,14 +251,16 @@ const Isian = (props, { emit }) => h('div', { class: ['isian', { salah: props.e[
 Isian.props = ['modelValue', 'label', 'k', 'e', 'type', 'inputmode', 'maxlength', 'step', 'tahunMin', 'tahunMax'];
 Isian.emits = ['update:modelValue'];
 
+// Peringatan bila data anak berbeda dengan NIK atau hasil baca KK/Akta yang tersimpan (dihitung server)
+const PeringatanKesesuaian = props => (props.daftar?.length
+  ? h('div', { class: 'pesan galat', role: 'alert' }, [
+    h('strong', 'Peringatan: data calon murid berbeda dengan dokumen.'),
+    h('ul', props.daftar.map(t => h('li', `${t.label} — ${t.sumber}: ${t.dokumen}; formulir: ${t.formulir}`))),
+    h('div', 'Pastikan Kartu Keluarga dan Akta Kelahiran yang diunggah milik anak yang didaftarkan, lalu perbaiki isian atau ganti dokumennya.'),
+  ]) : null);
+PeringatanKesesuaian.props = ['daftar'];
+
 const LANGKAH = ['Data Calon Murid', 'Orang Tua/Wali', 'Jalur & Dokumen', 'Ringkasan & Ajukan'];
-const AGAMA = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'];
-const PENDIDIKAN = ['Tidak sekolah', 'SD/sederajat', 'SMP/sederajat', 'SMA/sederajat', 'D1-D3', 'S1/D4', 'S2', 'S3'];
-const PENGHASILAN = ['< Rp1.000.000', 'Rp1.000.000 - Rp1.999.999', 'Rp2.000.000 - Rp4.999.999', 'Rp5.000.000 - Rp20.000.000', '> Rp20.000.000', 'Tidak berpenghasilan'];
-// Pekerjaan orang tua (mengacu pilihan Dapodik dan pekerjaan umum di Indonesia); di luar daftar -> "Pekerjaan Lainnya" + isian bebas
-const PEKERJAAN = ['Tidak bekerja', 'Mengurus rumah tangga', 'PNS/ASN', 'TNI', 'Polri', 'Karyawan BUMN/BUMD', 'Karyawan swasta',
-  'Guru/Dosen', 'Tenaga kesehatan', 'Wiraswasta/Wirausaha', 'Pedagang', 'Petani/Pekebun', 'Peternak', 'Nelayan', 'Buruh',
-  'Sopir/Pengemudi', 'Pekerja migran (TKI)', 'Pensiunan', 'Sudah meninggal'];
 const LAINNYA = 'Pekerjaan Lainnya';
 // Istilah pekerjaan Dukcapil di KK -> pilihan daftar
 const PEKERJAAN_KK = [
@@ -409,7 +414,10 @@ async function pilihAnakKK(daftar) {
     return { nilai: a.nik, judul: a.nama_lengkap || `NIK ${a.nik}`, lencana: kl.teks, lencanaJenis: kl.jenis, layak: kl.layak, bln,
       ket: `${a.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki'} · lahir ${tglIndo(a.tanggal_lahir)} · anak ke-${a.anak_ke} · usia ${Math.floor(bln / 12)} th ${bln % 12} bln` };
   });
-  const bawaan = [...opsi].filter(o => o.layak).sort((x, y) => x.bln - y.bln)[0] || [...opsi].sort((x, y) => x.bln - y.bln)[0];
+  // Bawaan: anak yang cocok dengan data yang sudah terisi (mis. dari Akta Kelahiran); bila tidak ada, anak termuda yang memenuhi usia SD
+  const cocok = daftar.find(a => (m.nik && a.nik === m.nik) || (m.nama_lengkap && a.nama_lengkap && namaSama(a.nama_lengkap, m.nama_lengkap)));
+  const bawaan = (cocok && opsi.find(o => o.nilai === cocok.nik)) || [...opsi].filter(o => o.layak).sort((x, y) => x.bln - y.bln)[0]
+    || [...opsi].sort((x, y) => x.bln - y.bln)[0];
   const nik = await pilih({ judul: 'Anak mana yang akan didaftarkan?', ikon: 'grupPengguna', ya: 'Daftarkan anak ini', tidak: 'Lewati',
     pesan: `Kartu Keluarga memuat ${daftar.length} anak. Usia dihitung per ${tglIndo(acuan)}.`, opsi, bawaan: bawaan?.nilai });
   return nik ? daftar.find(a => a.nik === nik) : null;
@@ -430,6 +438,21 @@ async function bacaOcr(kode, ev) {
       if (dipilih) { for (const k of KOLOM_ANAK) if (dipilih[k] != null) r.data[k] = dipilih[k]; }
       else toast('Data anak tidak diisi otomatis; alamat dan data orang tua tetap diisi dari KK.', 'info');
       delete r.data.anak_kk;
+    }
+    // Data anak pada dokumen ini berbeda dengan isian saat ini (mis. akta milik anak lain): jangan ditimpa diam-diam
+    const beda = bedaIdentitas(r.data, m);
+    if (beda.length) {
+      hentikanProgres(); ocrProgres.value = 100;
+      const namaDok = kode === 'KK' ? 'Kartu Keluarga' : 'Akta Kelahiran';
+      const pakai = await konfirmasi({ judul: `Data ${namaDok} berbeda dengan formulir`, jenis: 'peringatan', ikon: 'peringatan',
+        pesan: beda.map(b => `${b.label}: ${b.dokumen} (dokumen) ≠ ${b.formulir} (formulir)`).join('\n')
+          + `\n\nPastikan ${namaDok} ini milik anak yang didaftarkan.`,
+        ya: `Pakai data ${namaDok}`, tidak: 'Batalkan, ganti dokumen' });
+      if (!pakai) {
+        ocrHasil[kode] = { gagal: true, teks: `Dokumen tidak dipakai karena data anaknya berbeda (${beda.map(b => b.label.toLowerCase()).join(', ')}). `
+          + `Unggah ${namaDok} milik ${m.nama_lengkap || 'calon murid'}.` };
+        return;
+      }
     }
     const terisi = [];
     for (const [k, v] of Object.entries(r.data)) if (k in m && v) { m[k] = v; dariOcr.add('murid.' + k); terisi.push(LABEL_KOLOM[k] || k); }
@@ -459,11 +482,23 @@ async function daftarUlang() {
 // Tahap tempat suatu kekurangan berada, dari kunci detail galat server: murid.* -> 1, orang_tua* -> 2, jalur/dokumen -> 3
 const tahapKurang = reactive(new Set());
 const tahapDari = k => (k.startsWith('murid.') ? 0 : k.startsWith('orang_tua') ? 1 : 2);
-async function ajukan() {
+async function ajukan(abaikan = false) {
   sibuk.value = true; tahapKurang.clear();
-  try { isiDari(await api('/pendaftaran/saya/ajukan', { method: 'POST' })); tampil('Pendaftaran berhasil diajukan. Simpan nomor pendaftaran Anda.', 'sukses'); }
-  catch (err) {
+  try {
+    isiDari(await api('/pendaftaran/saya/ajukan', { method: 'POST', body: { abaikan_peringatan: abaikan } }));
+    tampil('Pendaftaran berhasil diajukan. Simpan nomor pendaftaran Anda.', 'sukses');
+  } catch (err) {
     const detail = err.detail || {};
+    if (detail.kesesuaian) {   // data berbeda dengan NIK/dokumen: orang tua memutuskan memperbaiki atau tetap mengajukan
+      sibuk.value = false;
+      const lanjut = await konfirmasi({ judul: 'Data berbeda dengan dokumen', jenis: 'peringatan',
+        pesan: detail.kesesuaian.map(t => `${t.label} — ${t.sumber}: ${t.dokumen}; formulir: ${t.formulir}`).join('\n')
+          + '\n\nPeriksa kembali data atau dokumen. Ajukan tetap bila Anda yakin data sudah benar (hasil baca otomatis bisa keliru); panitia akan memeriksanya.',
+        ya: 'Tetap ajukan', tidak: 'Perbaiki dulu' });
+      if (lanjut) return await ajukan(true);
+      langkah.value = 0; tampil('Silakan periksa data calon murid dan dokumen yang diunggah.', 'galat');
+      return;
+    }
     const kurang = (detail.dokumen || []).map(k => info.value.jenis_dokumen.find(d => d.kode === k)?.nama || k);
     for (const k of Object.keys(detail)) tahapKurang.add(tahapDari(k));
     if (!tahapKurang.size && /formulir data calon murid/i.test(err.message)) tahapKurang.add(0);

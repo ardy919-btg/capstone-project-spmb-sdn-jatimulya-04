@@ -140,6 +140,78 @@ function samarkanNama(nama) {
   return [k[0], ...k.slice(1).map(x => x[0].toUpperCase() + '.')].join(' ');
 }
 
+// ---------- Kesesuaian data calon murid dengan NIK dan dokumen ----------
+const tglIso = (d, m, y) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const tanggalValid = (d, m, y) => { const t = new Date(Date.UTC(y, m - 1, d)); return t.getUTCDate() === d && t.getUTCMonth() === m - 1; };
+/** NIK memuat tanggal lahir (DDMMYY, perempuan +40) pada digit ke-7 s.d. 12. Null bila bagian tanggalnya tidak sah. */
+function uraiNik(nik, tahunAcuan = new Date().getFullYear()) {
+  let d = +nik.slice(6, 8); const m = +nik.slice(8, 10); let y = +nik.slice(10, 12);
+  const jk = d > 40 ? 'P' : 'L'; if (d > 40) d -= 40;
+  y += (2000 + y <= tahunAcuan ? 2000 : 1900);
+  if (!tanggalValid(d, m, y)) return null;
+  return { jenis_kelamin: jk, tanggal_lahir: tglIso(d, m, y) };
+}
+
+const normNama = s => String(s || '').toUpperCase().replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
+function jarakEdit(a, b) {
+  let pra = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const kini = [i];
+    for (let j = 1; j <= b.length; j++) kini[j] = Math.min(pra[j] + 1, kini[j - 1] + 1, pra[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    pra = kini;
+  }
+  return pra[b.length];
+}
+const kemiripan = (a, b) => 1 - jarakEdit(a, b) / Math.max(a.length, b.length, 1);
+/** Dua nama dianggap sama bila hampir sama (toleran salah baca OCR beberapa huruf), atau semua kata pada nama yang
+ *  lebih pendek ada pada nama yang lebih panjang (mis. nama tengah tidak terbaca). "Rehan Saputra" vs "Zahra Aulianur" -> beda. */
+function namaSama(a, b) {
+  const x = normNama(a), y = normNama(b);
+  if (!x || !y || kemiripan(x, y) >= 0.8) return true;
+  const [pendek, panjang] = [x.split(' '), y.split(' ')].sort((p, q) => p.length - q.length);
+  return pendek.every(k => panjang.some(p => kemiripan(k, p) >= 0.8));
+}
+/** Nomor 16 digit dianggap sama bila berbeda paling banyak 1 digit (salah baca OCR). */
+const nomorSama = (a, b) => a.length === b.length && [...a].filter((c, i) => c !== b[i]).length <= 1;
+
+const TEKS_JK = { L: 'Laki-laki', P: 'Perempuan' };
+const tglTeks = iso => String(iso).split('-').reverse().join('-');   // 2015-11-11 -> 11-11-2015
+const NAMA_DOK = { AKTA: 'Akta Kelahiran', KK: 'Kartu Keluarga' };
+/**
+ * Periksa kesesuaian data calon murid dengan NIK-nya dan dengan hasil baca otomatis dokumen KK/Akta
+ * (dokumen: [{ kode, hasil_baca }]). Mengembalikan temuan [{ sumber, kolom, label, dokumen, formulir }].
+ * Hasil OCR dapat keliru, sehingga temuan berupa PERINGATAN untuk diperiksa, bukan penolakan otomatis.
+ */
+function cekKesesuaian(murid, dokumen = []) {
+  const t = [];
+  const m = murid || {};
+  const tambah = (sumber, kolom, label, nDok, nForm) => t.push({ sumber, kolom, label, dokumen: nDok, formulir: nForm });
+  const u = POLA.nik.test(m.nik || '') ? uraiNik(m.nik) : null;
+  if (u) {
+    if (m.jenis_kelamin && u.jenis_kelamin !== m.jenis_kelamin)
+      tambah('NIK', 'jenis_kelamin', 'Jenis kelamin', `${TEKS_JK[u.jenis_kelamin]} (menurut NIK)`, TEKS_JK[m.jenis_kelamin]);
+    if (m.tanggal_lahir && u.tanggal_lahir !== m.tanggal_lahir)
+      tambah('NIK', 'tanggal_lahir', 'Tanggal lahir', `${tglTeks(u.tanggal_lahir)} (menurut NIK)`, tglTeks(m.tanggal_lahir));
+  }
+  for (const d of dokumen) {
+    const b = d.hasil_baca;
+    if (!b || b.tidak_terbaca) continue;
+    const sumber = NAMA_DOK[d.kode];
+    if (d.kode === 'AKTA') {
+      if (b.nama_lengkap && m.nama_lengkap && !namaSama(b.nama_lengkap, m.nama_lengkap)) tambah(sumber, 'nama_lengkap', 'Nama', b.nama_lengkap, m.nama_lengkap);
+      if (b.jenis_kelamin && m.jenis_kelamin && b.jenis_kelamin !== m.jenis_kelamin) tambah(sumber, 'jenis_kelamin', 'Jenis kelamin', TEKS_JK[b.jenis_kelamin], TEKS_JK[m.jenis_kelamin]);
+      if (b.tanggal_lahir && m.tanggal_lahir && b.tanggal_lahir !== m.tanggal_lahir) tambah(sumber, 'tanggal_lahir', 'Tanggal lahir', tglTeks(b.tanggal_lahir), tglTeks(m.tanggal_lahir));
+      if (b.nik && m.nik && !nomorSama(b.nik, m.nik)) tambah(sumber, 'nik', 'NIK', b.nik, m.nik);
+    } else if (d.kode === 'KK') {
+      if (b.no_kk && m.no_kk && !nomorSama(b.no_kk, m.no_kk)) tambah(sumber, 'no_kk', 'Nomor KK', b.no_kk, m.no_kk);
+      // hanya bila tabel anggota terbaca cukup (≥ 2 NIK), agar baris yang gagal dibaca tidak dianggap ketidaksesuaian
+      if (b.nik_anggota?.length >= 2 && m.nik && !b.nik_anggota.some(n => nomorSama(n, m.nik)))
+        tambah(sumber, 'nik', 'NIK calon murid', 'tidak tercantum sebagai anggota keluarga', m.nik);
+    }
+  }
+  return t;
+}
+
 /** Rapikan username: buang spasi di awal/akhir dan spasi ganda ("  Budi   Santoso " -> "Budi Santoso"). */
 const rapikanUsername = u => String(u ?? '').trim().replace(/\s+/g, ' ');
 /** Pesan galat username, atau null bila valid. */
@@ -151,4 +223,4 @@ function cekUsername(u) {
 }
 
 module.exports = { hitungUsiaBulan, klasifikasiUsia, kkMemenuhiSyaratDomisili, validasiFormulir, ortuBelumLengkap, dokumenWajib, prosesSeleksi, samarkanNama,
-  rapikanUsername, cekUsername, POLA };
+  rapikanUsername, cekUsername, uraiNik, namaSama, cekKesesuaian, POLA };

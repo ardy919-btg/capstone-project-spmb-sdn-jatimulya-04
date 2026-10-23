@@ -43,7 +43,11 @@ dan mutasi dilimpahkan ke domisili (lihat `backend/src/aturan.js`).
 dipakai untuk "Lupa kata sandi"; orang tua tanpa email yang lupa kata sandi dibantu reset oleh panitia/Admin (menu Pengguna).
 
 Basis data yang sudah berjalan sebelumnya cukup dimigrasi berurutan (data tidak dihapus):
-`psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql` lalu `-f database/migrasi_002_username.sql`
-(akun lama otomatis mendapat username dari bagian email sebelum `@`).
+`psql -d spmb_jatimulya04 -f database/migrasi_001_admin.sql`, lalu `-f database/migrasi_002_username.sql`, lalu
+`-f database/migrasi_003_hasil_baca.sql` (akun lama otomatis mendapat username dari bagian email sebelum `@`).
+
+**Cek kesesuaian dokumen:** nama, jenis kelamin, dan tanggal lahir calon murid dibandingkan dengan NIK dan hasil baca
+otomatis KK/akta. Bila berbeda (mis. akta milik anak lain), orang tua langsung diperingatkan saat mengunggah dan saat mengajukan;
+panitia melihat peringatan yang sama di halaman verifikasi dan dapat memakai **Ubah Data** (perubahan dicatat di riwayat beserta alasannya).
 
 Catatan: jumlah rombel pada `database/seed.sql` (2 rombel × 28 murid) masih sementara dan perlu disesuaikan dengan data sekolah.

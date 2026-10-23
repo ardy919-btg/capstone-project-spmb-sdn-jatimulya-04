@@ -169,6 +169,7 @@ CREATE TABLE dokumen (
   status_verifikasi status_dokumen NOT NULL DEFAULT 'menunggu',
   catatan          TEXT,
   diunggah_pada    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  hasil_baca       JSONB,                          -- ringkasan hasil baca otomatis (OCR) KK/akta untuk cek kesesuaian data
   UNIQUE (pendaftaran_id, jenis_dokumen_id)
 );
 

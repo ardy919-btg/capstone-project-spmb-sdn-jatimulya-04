@@ -30,3 +30,7 @@ CLAUDE.md
 
 # --- Deploy VPS ---
 /deploy/.migrasi-selesai
+
+# --- Deploy VPS: berisi informasi server, hanya disimpan lokal (JANGAN di-push) ---
+/deploy/
+/docs/deploy-vps.md

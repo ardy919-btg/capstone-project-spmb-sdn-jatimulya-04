@@ -226,12 +226,13 @@ async function ambilPendaftaranSaya(penggunaId, db = pool) {
   const { rows: [pd] } = await db.query(`SELECT * FROM pendaftaran WHERE calon_murid_id = $1 AND periode_id = $2`, [murid.id, p.id]);
   let dokumen = [], riwayat = [];
   if (pd) {
-    ({ rows: dokumen } = await db.query(`SELECT jd.kode, jd.nama AS jenis, d.nama_file_asli, d.tipe_mime, d.ukuran_byte, d.status_verifikasi, d.catatan, d.diunggah_pada
-      FROM dokumen d JOIN jenis_dokumen jd ON jd.id = d.jenis_dokumen_id WHERE d.pendaftaran_id = $1 ORDER BY jd.id`, [pd.id]));
+    ({ rows: dokumen } = await db.query(`SELECT jd.kode, jd.nama AS jenis, d.nama_file_asli, d.tipe_mime, d.ukuran_byte, d.status_verifikasi, d.catatan, d.diunggah_pada,
+        d.hasil_baca FROM dokumen d JOIN jenis_dokumen jd ON jd.id = d.jenis_dokumen_id WHERE d.pendaftaran_id = $1 ORDER BY jd.id`, [pd.id]));
     ({ rows: riwayat } = await db.query(`SELECT status_lama, status_baru, catatan, waktu FROM riwayat_status WHERE pendaftaran_id = $1 ORDER BY waktu, id`, [pd.id]));
   }
   for (const k of ['tanggal_lahir', 'tgl_terbit_kk']) murid[k] = fmt(murid[k]);
-  return { periode_id: p.id, hasil_diumumkan: p.hasil_diumumkan, murid, orang_tua: ortu, pendaftaran: pd || null, dokumen, riwayat };
+  return { periode_id: p.id, hasil_diumumkan: p.hasil_diumumkan, murid, orang_tua: ortu, pendaftaran: pd || null, dokumen, riwayat,
+    kesesuaian: A.cekKesesuaian(murid, dokumen) };
 }
 
 app.get('/api/pendaftaran/saya', wajibLogin, async (req, res) => {
@@ -244,14 +245,33 @@ const KOLOM_MURID = ['nik', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'tempat_lah
   // data pelengkap Formulir Peserta Didik (Dapodik)
   'patokan_rumah', 'tempat_tinggal', 'moda_transportasi', 'no_kis_pbi', 'tinggi_badan_cm', 'berat_badan_kg', 'waktu_ke_sekolah_menit'];
 
+/** Isian murid siap simpan: kolom opsional kosong -> null, RT/RW tiga digit (RW "-" apa adanya). */
+function rapikanMurid(murid) {
+  const m = { kewarganegaraan: 'Indonesia', penerima_pkh: false, berkebutuhan_khusus: false, ...murid };
+  for (const k of ['nisn', 'kode_pos', 'no_kks', 'no_kip', 'jarak_ke_sekolah_km', 'anak_ke', 'jumlah_saudara', 'patokan_rumah', 'tempat_tinggal',
+    'moda_transportasi', 'no_kis_pbi', 'tinggi_badan_cm', 'berat_badan_kg', 'waktu_ke_sekolah_menit']) if (m[k] === '') m[k] = null;
+  m.rt = String(m.rt).trim().padStart(3, '0'); m.rw = String(m.rw).trim(); if (m.rw !== '-') m.rw = m.rw.padStart(3, '0');
+  return m;
+}
+/** Ganti seluruh data orang tua/wali seorang calon murid (baris tanpa nama diabaikan). */
+async function simpanOrangTua(db, muridId, orangTua) {
+  await db.query(`DELETE FROM orang_tua_wali WHERE calon_murid_id = $1`, [muridId]);
+  for (const o of (orangTua || []).filter(o => o.nama)) {
+    await db.query(`INSERT INTO orang_tua_wali (calon_murid_id, hubungan, nama, nik, tahun_lahir, pendidikan, pekerjaan, penghasilan, no_hp)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, [muridId, o.hubungan, o.nama, o.nik || null, o.tahun_lahir || null, o.pendidikan || null,
+      o.pekerjaan || null, o.penghasilan || null, o.no_hp || null]);
+  }
+}
+const nikDipakai = err => {
+  if (err.code === '23505') throw new HttpError(409, 'NIK calon murid sudah terdaftar pada akun lain', { 'murid.nik': 'NIK sudah terdaftar' });
+  throw err;
+};
+
 app.put('/api/pendaftaran/saya', wajibLogin, async (req, res) => {
   const f = req.body || {};
   const errors = A.validasiFormulir(f);
   if (Object.keys(errors).length) throw new HttpError(422, 'Periksa kembali isian formulir', errors);
-  const m = { kewarganegaraan: 'Indonesia', penerima_pkh: false, berkebutuhan_khusus: false, ...f.murid };
-  for (const k of ['nisn', 'kode_pos', 'no_kks', 'no_kip', 'jarak_ke_sekolah_km', 'anak_ke', 'jumlah_saudara', 'patokan_rumah', 'tempat_tinggal',
-    'moda_transportasi', 'no_kis_pbi', 'tinggi_badan_cm', 'berat_badan_kg', 'waktu_ke_sekolah_menit']) if (m[k] === '') m[k] = null;
-  m.rt = String(m.rt).trim().padStart(3, '0'); m.rw = String(m.rw).trim(); if (m.rw !== '-') m.rw = m.rw.padStart(3, '0');
+  const m = rapikanMurid(f.murid);
   let dilampirkan = [];
 
   await tx(async db => {
@@ -272,16 +292,8 @@ app.put('/api/pendaftaran/saya', wajibLogin, async (req, res) => {
           VALUES ($1, ${KOLOM_MURID.map((_, i) => `$${i + 2}`).join(', ')}) RETURNING id`, [req.pengguna.id, ...vals]);
         muridId = r.id;
       }
-    } catch (err) {
-      if (err.code === '23505') throw new HttpError(409, 'NIK calon murid sudah terdaftar pada akun lain', { 'murid.nik': 'NIK sudah terdaftar' });
-      throw err;
-    }
-    await db.query(`DELETE FROM orang_tua_wali WHERE calon_murid_id = $1`, [muridId]);
-    for (const o of (f.orang_tua || []).filter(o => o.nama)) {
-      await db.query(`INSERT INTO orang_tua_wali (calon_murid_id, hubungan, nama, nik, tahun_lahir, pendidikan, pekerjaan, penghasilan, no_hp)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, [muridId, o.hubungan, o.nama, o.nik || null, o.tahun_lahir || null, o.pendidikan || null,
-        o.pekerjaan || null, o.penghasilan || null, o.no_hp || null]);
-    }
+    } catch (err) { nikDipakai(err); }
+    await simpanOrangTua(db, muridId, f.orang_tua);
     const usia = A.hitungUsiaBulan(m.tanggal_lahir, fmt(p.tgl_acuan_usia));
     const kls = A.klasifikasiUsia(usia);
     await db.query(`INSERT INTO pendaftaran (calon_murid_id, periode_id, jalur, usia_bulan, perlu_rekomendasi_psikolog)
@@ -313,16 +325,36 @@ const upload = multer({
 });
 
 /** Simpan/ganti satu dokumen persyaratan (berkas sudah berada di UPLOAD_DIR). Berkas lama dihapus. */
-async function simpanDokumen(db, pdId, kode, { nama, berkas, mime, ukuran }) {
+async function simpanDokumen(db, pdId, kode, { nama, berkas, mime, ukuran, hasil_baca = null }) {
   const { rows: [jd] } = await db.query(`SELECT id FROM jenis_dokumen WHERE kode = $1`, [kode]);
   if (!jd) throw new HttpError(404, 'Jenis dokumen tidak dikenal');
   const { rows: [lama] } = await db.query(`SELECT path_file FROM dokumen WHERE pendaftaran_id = $1 AND jenis_dokumen_id = $2`, [pdId, jd.id]);
-  await db.query(`INSERT INTO dokumen (pendaftaran_id, jenis_dokumen_id, nama_file_asli, path_file, tipe_mime, ukuran_byte)
-    VALUES ($1,$2,$3,$4,$5,$6)
+  const { rows: [d] } = await db.query(`INSERT INTO dokumen (pendaftaran_id, jenis_dokumen_id, nama_file_asli, path_file, tipe_mime, ukuran_byte, hasil_baca)
+    VALUES ($1,$2,$3,$4,$5,$6,$7)
     ON CONFLICT (pendaftaran_id, jenis_dokumen_id) DO UPDATE SET nama_file_asli = EXCLUDED.nama_file_asli, path_file = EXCLUDED.path_file,
-      tipe_mime = EXCLUDED.tipe_mime, ukuran_byte = EXCLUDED.ukuran_byte, status_verifikasi = 'menunggu', catatan = NULL, diunggah_pada = now()`,
-    [pdId, jd.id, String(nama).slice(0, 200), berkas, mime, ukuran]);
+      tipe_mime = EXCLUDED.tipe_mime, ukuran_byte = EXCLUDED.ukuran_byte, status_verifikasi = 'menunggu', catatan = NULL, diunggah_pada = now(),
+      hasil_baca = EXCLUDED.hasil_baca RETURNING id`,
+    [pdId, jd.id, String(nama).slice(0, 200), berkas, mime, ukuran, hasil_baca]);
   if (lama && lama.path_file !== berkas) fs.rm(path.join(UPLOAD_DIR, lama.path_file), { force: true }, () => {});
+  return d.id;
+}
+
+// ---------- Hasil baca otomatis (OCR) dokumen untuk cek kesesuaian ----------
+/** Ringkasan hasil OCR yang disimpan bersama dokumen: hanya data identitas untuk dibandingkan dengan formulir. */
+function ringkasBaca(kode, data) {
+  const ambil = kolom => Object.fromEntries(kolom.filter(k => data[k] != null && data[k] !== '').map(k => [k, data[k]]));
+  const r = kode === 'AKTA' ? ambil(['nama_lengkap', 'jenis_kelamin', 'tanggal_lahir', 'nik', 'no_akta_lahir'])
+    : ambil(['no_kk', 'nik_anggota']);
+  return { ...(Object.keys(r).length ? r : { tidak_terbaca: true }), dibaca_pada: new Date().toISOString() };
+}
+/** Baca ulang berkas KK/akta yang tersimpan lalu simpan ringkasannya (hanya bila berkasnya belum diganti). */
+async function bacaDokumenTersimpan(id) {
+  const { rows: [d] } = await pool.query(`SELECT d.path_file, d.tipe_mime, jd.kode FROM dokumen d JOIN jenis_dokumen jd ON jd.id = d.jenis_dokumen_id WHERE d.id = $1`, [id]);
+  if (!d || !['KK', 'AKTA'].includes(d.kode)) return;
+  let hasil;
+  try { hasil = ringkasBaca(d.kode, (await OCR.bacaDokumen(d.kode, path.join(UPLOAD_DIR, path.basename(d.path_file)), d.tipe_mime)).data); }
+  catch (e) { console.error('OCR dokumen tersimpan gagal:', e.message); hasil = { tidak_terbaca: true, dibaca_pada: new Date().toISOString() }; }
+  await pool.query(`UPDATE dokumen SET hasil_baca = $2 WHERE id = $1 AND path_file = $3`, [id, hasil, d.path_file]);
 }
 
 app.post('/api/pendaftaran/saya/dokumen/:kode', wajibLogin, (req, res, next) => {
@@ -333,16 +365,19 @@ app.post('/api/pendaftaran/saya/dokumen/:kode', wajibLogin, (req, res, next) => 
 }, async (req, res) => {
   if (!req.file) throw new HttpError(400, 'Berkas belum dipilih');
   const hapusFile = () => fs.rm(req.file.path, { force: true }, () => {});
+  let dokId;
   try {
     await tx(async db => {
       const data = await ambilPendaftaranSaya(req.pengguna.id, db);
       const pd = data.pendaftaran;
       if (!pd) throw new HttpError(409, 'Simpan formulir data calon murid terlebih dahulu');
       if (!['draf', 'perlu_perbaikan'].includes(pd.status)) throw new HttpError(409, 'Dokumen tidak dapat diubah setelah pendaftaran diajukan');
-      await simpanDokumen(db, pd.id, req.params.kode,
+      dokId = await simpanDokumen(db, pd.id, req.params.kode,
         { nama: req.file.originalname, berkas: path.basename(req.file.path), mime: req.file.mimetype, ukuran: req.file.size });
     });
   } catch (e) { hapusFile(); throw e; }
+  // KK/akta yang diunggah manual dibaca otomatis di latar belakang untuk cek kesesuaian data (tidak menunda jawaban)
+  if (['KK', 'AKTA'].includes(req.params.kode)) bacaDokumenTersimpan(dokId).catch(e => console.error(e));
   res.status(201).json(await ambilPendaftaranSaya(req.pengguna.id));
 });
 
@@ -371,6 +406,10 @@ app.post('/api/pendaftaran/saya/ajukan', wajibLogin, async (req, res) => {
     const kurang = wajib.filter(k => !ada.has(k));
     if (kurang.length) { detail.dokumen = kurang; pesan.push('Dokumen wajib belum lengkap'); }
     if (pesan.length) throw new HttpError(422, pesan.join('; '), detail);
+    // Data berbeda dengan NIK/dokumen (mis. akta milik anak lain): orang tua diperingatkan dahulu; boleh tetap mengajukan
+    // bila yakin data benar (hasil baca otomatis dapat keliru) — panitia tetap melihat peringatan yang sama saat verifikasi.
+    if (data.kesesuaian.length && !req.body?.abaikan_peringatan)
+      throw new HttpError(409, 'Data calon murid berbeda dengan dokumen yang diunggah', { kesesuaian: data.kesesuaian });
     const nomor = await db.query(`SELECT 'SPMB-' || left($1, 4) || '-' || upper(left($2, 3)) || '-' || lpad(nextval('seq_nomor_pendaftaran')::text, 4, '0') AS n`,
       [p.tahun_ajaran, pd.jalur]);
     await db.query(`SELECT set_config('spmb.pengguna_id', $1, true)`, [String(req.pengguna.id)]);
@@ -408,7 +447,7 @@ app.post('/api/ocr/:kode', wajibLogin, (req, res, next) => {
   fs.copyFileSync(req.file.path, path.join(UPLOAD_DIR, berkas)); fs.rm(req.file.path, { force: true }, () => {});
   const token = crypto.randomUUID();
   berkasOcr.set(token, { pengguna_id: req.pengguna.id, kode: req.params.kode, nama: req.file.originalname, berkas, mime: req.file.mimetype,
-    ukuran: req.file.size, kedaluwarsa: Date.now() + BATAS_BERKAS_OCR });
+    ukuran: req.file.size, kedaluwarsa: Date.now() + BATAS_BERKAS_OCR, hasil_baca: ringkasBaca(req.params.kode, r.data) });
   res.json({ ...r, token_berkas: token });
 });
 
@@ -487,15 +526,17 @@ async function detailPendaftar(id, db = pool) {
   if (!pd) throw new HttpError(404, 'Pendaftar tidak ditemukan');
   const { rows: [murid] } = await db.query(`SELECT * FROM calon_murid WHERE id = $1`, [pd.calon_murid_id]);
   for (const k of ['tanggal_lahir', 'tgl_terbit_kk']) murid[k] = fmt(murid[k]);
+  murid.rw = murid.rw?.trim();
   const { rows: orang_tua } = await db.query(`SELECT * FROM orang_tua_wali WHERE calon_murid_id = $1 ORDER BY hubungan`, [murid.id]);
-  const { rows: dokumen } = await db.query(`SELECT d.id, jd.kode, jd.nama AS jenis, d.nama_file_asli, d.tipe_mime, d.ukuran_byte, d.status_verifikasi, d.catatan, d.diunggah_pada
-    FROM dokumen d JOIN jenis_dokumen jd ON jd.id = d.jenis_dokumen_id WHERE d.pendaftaran_id = $1 ORDER BY jd.id`, [id]);
+  const { rows: dokumen } = await db.query(`SELECT d.id, jd.kode, jd.nama AS jenis, d.nama_file_asli, d.tipe_mime, d.ukuran_byte, d.status_verifikasi, d.catatan, d.diunggah_pada,
+      d.hasil_baca FROM dokumen d JOIN jenis_dokumen jd ON jd.id = d.jenis_dokumen_id WHERE d.pendaftaran_id = $1 ORDER BY jd.id`, [id]);
   const { rows: riwayat } = await db.query(`SELECT r.status_lama, r.status_baru, r.catatan, r.waktu, u.nama AS oleh
     FROM riwayat_status r LEFT JOIN pengguna u ON u.id = r.oleh_pengguna_id WHERE r.pendaftaran_id = $1 ORDER BY r.waktu, r.id`, [id]);
   const p = await periodeAktif(db);
   const wajib = A.dokumenWajib(await daftarPersyaratan(db), pd.jalur, pd.perlu_rekomendasi_psikolog);
   const kk_memenuhi = A.kkMemenuhiSyaratDomisili(murid.tgl_terbit_kk, fmt(p.tgl_mulai_daftar));
-  return { pendaftaran: pd, murid, orang_tua, dokumen, riwayat, dokumen_wajib: wajib, kk_memenuhi, usia: A.klasifikasiUsia(pd.usia_bulan) };
+  return { pendaftaran: pd, murid, orang_tua, dokumen, riwayat, dokumen_wajib: wajib, kk_memenuhi, usia: A.klasifikasiUsia(pd.usia_bulan),
+    kesesuaian: A.cekKesesuaian(murid, dokumen), hasil_diumumkan: p.hasil_diumumkan };
 }
 panitia.get('/pendaftar/:id', async (req, res) => res.json(await detailPendaftar(+req.params.id)));
 
@@ -515,6 +556,61 @@ panitia.put('/dokumen/:id', async (req, res) => {
   if (!['diajukan', 'terverifikasi'].includes(d.status)) throw new HttpError(409, 'Dokumen hanya dapat diverifikasi saat pendaftaran berstatus diajukan');
   await pool.query(`UPDATE dokumen SET status_verifikasi = $2, catatan = $3 WHERE id = $1`, [+req.params.id, status_verifikasi, catatan?.trim() || null]);
   res.json(await detailPendaftar(d.pendaftaran_id));
+});
+
+/** Baca otomatis KK/akta yang tersimpan (mis. diunggah sebelum fitur ini ada) untuk cek kesesuaian data. */
+panitia.post('/dokumen/:id/baca', async (req, res) => {
+  const { rows: [d] } = await pool.query(`SELECT d.pendaftaran_id, jd.kode FROM dokumen d JOIN jenis_dokumen jd ON jd.id = d.jenis_dokumen_id WHERE d.id = $1`, [+req.params.id]);
+  if (!d) throw new HttpError(404, 'Dokumen tidak ditemukan');
+  if (!['KK', 'AKTA'].includes(d.kode)) throw new HttpError(400, 'Baca otomatis hanya untuk Kartu Keluarga dan Akta Kelahiran');
+  await bacaDokumenTersimpan(+req.params.id);
+  res.json(await detailPendaftar(d.pendaftaran_id));
+});
+
+// Ubah data calon murid & orang tua oleh panitia/Admin (mis. jenis kelamin salah karena akta milik anak lain).
+// Setiap perubahan dicatat di riwayat status beserta alasannya, dan tampil juga di halaman orang tua.
+const LABEL_UBAH = { nama_lengkap: 'Nama', nik: 'NIK', nisn: 'NISN', jenis_kelamin: 'Jenis kelamin', tempat_lahir: 'Tempat lahir',
+  tanggal_lahir: 'Tanggal lahir', no_akta_lahir: 'No. akta', agama: 'Agama', alamat: 'Alamat', rt: 'RT', rw: 'RW', kelurahan: 'Kelurahan',
+  kecamatan: 'Kecamatan', kode_pos: 'Kode pos', no_kk: 'No. KK', tgl_terbit_kk: 'Tanggal terbit KK', jarak_ke_sekolah_km: 'Jarak ke sekolah (km)',
+  waktu_ke_sekolah_menit: 'Waktu ke sekolah (menit)', anak_ke: 'Anak ke-', jumlah_saudara: 'Jumlah saudara' };
+const LABEL_ORTU = { nama: 'nama', nik: 'NIK', tahun_lahir: 'tahun lahir', pendidikan: 'pendidikan', pekerjaan: 'pekerjaan', penghasilan: 'penghasilan', no_hp: 'HP' };
+const teksNilai = v => (v === null || v === undefined || v === '' ? '-' : String(v).trim());
+
+panitia.put('/pendaftar/:id/data', async (req, res) => {
+  const id = +req.params.id;
+  const b = req.body || {};
+  const alasan = String(b.alasan || '').trim();
+  await tx(async db => {
+    const p = await periodeAktif(db);
+    if (p.hasil_diumumkan) throw new HttpError(409, 'Hasil seleksi sudah diumumkan; data tidak dapat diubah');
+    const det = await detailPendaftar(id, db);
+    const lama = det.murid;
+    const baru = { ...lama, ...Object.fromEntries(KOLOM_MURID.filter(k => k in (b.murid || {})).map(k => [k, b.murid[k]])) };
+    const ortuBaru = Array.isArray(b.orang_tua) ? b.orang_tua : det.orang_tua;
+    const e = A.validasiFormulir({ murid: baru, orang_tua: ortuBaru, jalur: det.pendaftaran.jalur });
+    if (alasan.length < 5) e.alasan = 'Tuliskan alasan perubahan (minimal 5 karakter)';
+    if (Object.keys(e).length) throw new HttpError(422, 'Periksa kembali isian data', e);
+    const m = rapikanMurid(baru);
+    // Catatan perubahan, mis. "Jenis kelamin: P → L"
+    const tampil = (k, v) => (k === 'jenis_kelamin' ? { L: 'Laki-laki', P: 'Perempuan' }[v] || teksNilai(v) : teksNilai(v));
+    const ubah = Object.keys(LABEL_UBAH).filter(k => teksNilai(lama[k]) !== teksNilai(m[k]))
+      .map(k => `${LABEL_UBAH[k]}: ${tampil(k, lama[k])} → ${tampil(k, m[k])}`);
+    for (const hub of ['ayah', 'ibu', 'wali']) {
+      const o1 = det.orang_tua.find(o => o.hubungan === hub && o.nama) || {}, o2 = ortuBaru.find(o => o.hubungan === hub && o.nama) || {};
+      for (const [k, label] of Object.entries(LABEL_ORTU))
+        if (teksNilai(o1[k]) !== teksNilai(o2[k])) ubah.push(`${label} ${hub}: ${teksNilai(o1[k])} → ${teksNilai(o2[k])}`);
+    }
+    if (!ubah.length) throw new HttpError(422, 'Tidak ada data yang berubah');
+    await db.query(`UPDATE calon_murid SET ${KOLOM_MURID.map((k, i) => `${k} = $${i + 1}`).join(', ')}, diubah_pada = now() WHERE id = $${KOLOM_MURID.length + 1}`,
+      [...KOLOM_MURID.map(k => m[k] ?? null), lama.id]).catch(nikDipakai);
+    if (Array.isArray(b.orang_tua)) await simpanOrangTua(db, lama.id, b.orang_tua);
+    // tanggal lahir dapat berubah -> usia dan kebutuhan rekomendasi psikolog dihitung ulang
+    const usia = A.hitungUsiaBulan(m.tanggal_lahir, fmt(p.tgl_acuan_usia));
+    await db.query(`UPDATE pendaftaran SET usia_bulan = $2, perlu_rekomendasi_psikolog = $3 WHERE id = $1`, [id, usia, !!A.klasifikasiUsia(usia).perluRekomendasi]);
+    await db.query(`INSERT INTO riwayat_status (pendaftaran_id, status_lama, status_baru, oleh_pengguna_id, catatan, waktu) VALUES ($1, $2, $2, $3, $4, $5)`,
+      [id, det.pendaftaran.status, req.pengguna.id, `Data diubah panitia — ${ubah.join('; ')}. Alasan: ${alasan}`.slice(0, 2000), sekarang()]);
+  });
+  res.json(await detailPendaftar(id));
 });
 
 panitia.post('/pendaftar/:id/status', async (req, res) => {

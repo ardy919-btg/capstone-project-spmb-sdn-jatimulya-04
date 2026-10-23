@@ -5,6 +5,7 @@ const { execFile } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { uraiNik } = require('./aturan');
 
 // Perintah eksternal dapat diatur lewat variabel lingkungan (penting di Windows: "convert" adalah perintah bawaan
 // Windows untuk sistem berkas, sehingga ImageMagick 7 dipanggil dengan "magick").
@@ -103,14 +104,8 @@ function perbaikiAngka(t) {
 const tglIso = (d, m, y) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 function tanggalValid(d, m, y) { const t = new Date(Date.UTC(y, m - 1, d)); return t.getUTCDate() === d && t.getUTCMonth() === m - 1; }
 
-/** NIK memuat tanggal lahir (DDMMYY, perempuan +40) pada digit ke-7 s.d. 12. */
-function urai_nik(nik, tahunAcuan = new Date().getFullYear()) {
-  let d = +nik.slice(6, 8); const m = +nik.slice(8, 10); let y = +nik.slice(10, 12);
-  const jk = d > 40 ? 'P' : 'L'; if (d > 40) d -= 40;
-  y += (2000 + y <= tahunAcuan ? 2000 : 1900);
-  if (!tanggalValid(d, m, y)) return null;
-  return { jenis_kelamin: jk, tanggal_lahir: tglIso(d, m, y) };
-}
+/** NIK memuat tanggal lahir dan jenis kelamin (lihat aturan.js). */
+const urai_nik = uraiNik;
 const ambil = (teks, re) => { const m = teks.match(re); return m ? m[1].trim().replace(/\s{2,}/g, ' ') : null; };
 /** Nilai setelah "Label :" sampai akhir baris atau sampai label berikutnya (KK memiliki dua kolom isian). */
 function nilaiLabel(teks, label) {
@@ -171,6 +166,9 @@ function tafsirKK(baris) {
   const noKk = ambil(teks, /No(?:mor)?\.?\s*[:.]?\s*(\d{16})/i)
     || angka.find(n => !teks.split('\n').some(l => l.includes(n) && barisAnggota(l)));
   if (noKk) hasil.no_kk = noKk;
+  // semua NIK anggota yang terbaca (untuk memeriksa bahwa calon murid tercantum di KK ini)
+  const nikAnggota = angka.filter(n => n !== noKk);
+  if (nikAnggota.length) hasil.nik_anggota = [...new Set(nikAnggota)];
   // Anggota keluarga = NIK selain nomor KK; anak calon murid = anggota termuda
   const anggota = angka.filter(n => n !== noKk).map(nik => ({ nik, ...urai_nik(nik) })).filter(a => a.tanggal_lahir);
   anggota.sort((a, b) => b.tanggal_lahir.localeCompare(a.tanggal_lahir));

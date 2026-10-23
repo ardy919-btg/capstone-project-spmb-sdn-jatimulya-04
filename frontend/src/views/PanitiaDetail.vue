@@ -6,6 +6,8 @@
         <p class="muted">{{ d.pendaftaran.nomor_pendaftaran }} · Jalur {{ LABEL_JALUR[d.pendaftaran.jalur] }}</p></div>
       <div class="judul-kanan">
         <span class="lencana" :class="d.pendaftaran.status">{{ LABEL_STATUS[d.pendaftaran.status] }}</span>
+        <button v-if="!d.hasil_diumumkan" type="button" class="tombol-ubah" @click="bukaUbah">
+          <Ikon nama="pensil" :ukuran="16" /> Ubah Data</button>
         <!-- Khusus Admin Sekolah: hapus data pendaftaran agar orang tua dapat mendaftar ulang -->
         <button v-if="sesi.pengguna?.peran === 'admin'" type="button" class="tombol-hapus" @click="hapusPendaftaran">
           <Ikon nama="sampah" :ukuran="16" /> Hapus pendaftaran</button>
@@ -22,6 +24,15 @@
             {{ d.kk_memenuhi ? 'lebih dari 1 tahun sebelum pendaftaran dibuka'
               : 'kurang dari 1 tahun sebelum pendaftaran dibuka (peringatan: periksa kesesuaian alamat domisili dengan dokumen KK)' }}</li>
           <li :class="lengkap ? 'ok' : 'tidak'">Dokumen wajib: {{ d.dokumen_wajib.length }} jenis, {{ validWajib }} dinyatakan valid</li>
+          <!-- Kesesuaian data anak dengan NIK dan hasil baca otomatis KK/akta (mis. akta milik anak lain) -->
+          <li v-for="(t, i) in d.kesesuaian" :key="'k' + i" class="tidak"><strong>{{ t.label }} tidak sesuai</strong> —
+            {{ t.sumber }}: <strong>{{ t.dokumen }}</strong>; formulir: <strong>{{ t.formulir }}</strong></li>
+          <li v-for="x in dokBaca.belum" :key="'b' + x.id" class="peringatan">{{ x.jenis }} belum dibaca otomatis untuk cek kesesuaian data.
+            <button type="button" class="tautan" :disabled="!!sibukBaca" @click="bacaDok(x)">{{ sibukBaca === x.id ? 'Membaca… (±15 detik)' : 'Baca sekarang' }}</button></li>
+          <li v-for="x in dokBaca.gagal" :key="'g' + x.id" class="peringatan">{{ x.jenis }} tidak terbaca otomatis — cocokkan nama, jenis kelamin, dan tanggal lahir secara manual.</li>
+          <li v-if="!d.kesesuaian.length && dokBaca.sudah" class="ok">Nama, jenis kelamin, dan tanggal lahir sesuai dengan NIK dan hasil baca KK/akta</li>
+          <li v-if="d.kesesuaian.length" class="saran">Bila dokumen milik anak lain: nyatakan dokumen <em>Tidak valid</em> lalu <em>Minta Perbaikan</em>.
+            Bila hanya isian yang keliru: gunakan <button type="button" class="tautan" @click="bukaUbah">Ubah Data</button>.</li>
         </ul>
         <h3>Data Calon Murid</h3>
         <table class="data">
@@ -106,6 +117,48 @@
           <td><span class="lencana" :class="r.status_baru">{{ LABEL_STATUS[r.status_baru] }}</span></td><td>{{ r.oleh || '-' }}</td><td>{{ r.catatan || '' }}</td></tr></table>
       </section>
     </div>
+
+    <!-- Ubah data calon murid & orang tua oleh panitia/Admin; perubahan tercatat di riwayat beserta alasannya -->
+    <PanelGeser v-if="ubah" judul="Ubah Data Pendaftar" ikon="pensil" lebar="min(860px, calc(100vw - 32px))"
+      :subjudul="`${d.pendaftaran.nomor_pendaftaran || ''} · perubahan dicatat di riwayat`" @tutup="ubah = null">
+      <form id="form-ubah" @submit.prevent="simpanUbah" novalidate>
+        <div v-if="d.kesesuaian.length" class="pesan galat kecil">
+          <div v-for="(t, i) in d.kesesuaian" :key="i">{{ t.label }} — {{ t.sumber }}: {{ t.dokumen }}; formulir: {{ t.formulir }}</div></div>
+        <h4>Data Calon Murid</h4>
+        <div class="kisi">
+          <div v-for="k in KOLOM_UBAH" :key="k.id" class="isian" :class="{ salah: eUbah['murid.' + k.id] }">
+            <label :for="'u-' + k.id">{{ k.label }}</label>
+            <select v-if="k.pilihan" :id="'u-' + k.id" v-model="ubah.murid[k.id]">
+              <option v-for="p in k.pilihan" :key="p.nilai ?? p" :value="p.nilai ?? p">{{ p.teks ?? p }}</option></select>
+            <InputTanggal v-else-if="k.tanggal" :id="'u-' + k.id" v-model="ubah.murid[k.id]" :tahun-min="new Date().getFullYear() - (k.id === 'tgl_terbit_kk' ? 40 : 20)" />
+            <input v-else :id="'u-' + k.id" v-model.trim="ubah.murid[k.id]" :type="k.angka ? 'number' : 'text'" :step="k.angka" :maxlength="k.maks" />
+            <div class="galat" v-if="eUbah['murid.' + k.id]">{{ eUbah['murid.' + k.id] }}</div>
+          </div>
+        </div>
+        <h4>Orang Tua/Wali</h4>
+        <fieldset v-for="(o, i) in ubah.orang_tua" :key="o.hubungan">
+          <legend>{{ o.hubungan === 'ayah' ? 'Ayah' : o.hubungan === 'ibu' ? 'Ibu' : 'Wali' }}</legend>
+          <div class="kisi">
+            <div v-for="k in KOLOM_ORTU" :key="k.id" class="isian" :class="{ salah: eUbah[`orang_tua.${i}.${k.id}`] }">
+              <label :for="`u-${o.hubungan}-${k.id}`">{{ k.label }}</label>
+              <select v-if="k.pilihan" :id="`u-${o.hubungan}-${k.id}`" v-model="o[k.id]">
+                <option value="">— pilih —</option><option v-for="p in k.pilihan" :key="p">{{ p }}</option>
+                <option v-if="o[k.id] && !k.pilihan.includes(o[k.id])" :value="o[k.id]">{{ o[k.id] }}</option></select>
+              <input v-else :id="`u-${o.hubungan}-${k.id}`" v-model.trim="o[k.id]" :list="k.daftar" :inputmode="k.angka ? 'numeric' : null" :maxlength="k.maks" />
+              <div class="galat" v-if="eUbah[`orang_tua.${i}.${k.id}`]">{{ eUbah[`orang_tua.${i}.${k.id}`] }}</div>
+            </div>
+          </div>
+        </fieldset>
+        <datalist id="daftar-pekerjaan"><option v-for="p in PEKERJAAN" :key="p" :value="p" /></datalist>
+        <div class="isian" :class="{ salah: eUbah.alasan }"><label for="u-alasan">Alasan perubahan (tampil di riwayat, juga terlihat orang tua)</label>
+          <textarea id="u-alasan" v-model="ubah.alasan" rows="2" placeholder="mis. Jenis kelamin disesuaikan dengan NIK dan akta kelahiran yang benar"></textarea>
+          <div class="galat" v-if="eUbah.alasan">{{ eUbah.alasan }}</div></div>
+      </form>
+      <template #kaki>
+        <button type="button" class="tombol sekunder" @click="ubah = null">Batal</button>
+        <button type="submit" form="form-ubah" class="tombol" :disabled="sibukUbah">{{ sibukUbah ? 'Menyimpan…' : 'Simpan Perubahan' }}</button>
+      </template>
+    </PanelGeser>
   </div>
 </template>
 
@@ -116,6 +169,8 @@ import { api, sesi, ambilBerkas, LABEL_JALUR, LABEL_STATUS, LABEL_DOK, tglIndo, 
 import { toast, konfirmasi } from '../notifikasi';
 import Ikon from '../components/Ikon.vue';
 import PanelGeser from '../components/PanelGeser.vue';
+import InputTanggal from '../components/InputTanggal.vue';
+import { AGAMA, PENDIDIKAN, PENGHASILAN, PEKERJAAN } from '../pilihan';
 const route = useRoute(), router = useRouter();
 async function hapusPendaftaran() {
   const m = d.value.murid, pd = d.value.pendaftaran;
@@ -133,6 +188,59 @@ const validWajib = computed(() => d.value.dokumen_wajib.filter(k => d.value.doku
 const lengkap = computed(() => validWajib.value === d.value.dokumen_wajib.length);
 const kurang = computed(() => d.value.dokumen_wajib.filter(k => !d.value.dokumen.find(x => x.kode === k)));
 const tampil = (teks, jenis = 'info') => Object.assign(pesan, { teks, jenis });
+
+// ---------- Kesesuaian dengan dokumen (hasil baca otomatis KK/akta) ----------
+const dokBaca = computed(() => {
+  const kkAkta = d.value.dokumen.filter(x => ['KK', 'AKTA'].includes(x.kode));
+  return { belum: kkAkta.filter(x => !x.hasil_baca), gagal: kkAkta.filter(x => x.hasil_baca?.tidak_terbaca),
+    sudah: kkAkta.some(x => x.hasil_baca && !x.hasil_baca.tidak_terbaca) };
+});
+const sibukBaca = ref(0);
+async function bacaDok(x) {
+  sibukBaca.value = x.id;
+  try { d.value = await api(`/panitia/dokumen/${x.id}/baca`, { method: 'POST' });
+    tampil(d.value.kesesuaian.length ? `${x.jenis} selesai dibaca: ditemukan data yang tidak sesuai.` : `${x.jenis} selesai dibaca.`, d.value.kesesuaian.length ? 'galat' : 'sukses'); }
+  catch (e) { tampil(e.message, 'galat'); } finally { sibukBaca.value = 0; }
+}
+
+// ---------- Ubah data pendaftar ----------
+const KOLOM_UBAH = [
+  { id: 'nama_lengkap', label: 'Nama lengkap' }, { id: 'nik', label: 'NIK', maks: 16 }, { id: 'nisn', label: 'NISN', maks: 10 },
+  { id: 'jenis_kelamin', label: 'Jenis kelamin', pilihan: [{ nilai: 'L', teks: 'Laki-laki' }, { nilai: 'P', teks: 'Perempuan' }] },
+  { id: 'tempat_lahir', label: 'Tempat lahir' }, { id: 'tanggal_lahir', label: 'Tanggal lahir', tanggal: true },
+  { id: 'no_akta_lahir', label: 'No. registrasi akta lahir' }, { id: 'agama', label: 'Agama', pilihan: AGAMA },
+  { id: 'alamat', label: 'Alamat' }, { id: 'rt', label: 'RT', maks: 3 }, { id: 'rw', label: 'RW (- bila tidak ada)', maks: 3 },
+  { id: 'kelurahan', label: 'Kelurahan/Desa' }, { id: 'kecamatan', label: 'Kecamatan' }, { id: 'kode_pos', label: 'Kode pos', maks: 5 },
+  { id: 'no_kk', label: 'Nomor KK', maks: 16 }, { id: 'tgl_terbit_kk', label: 'Tanggal terbit KK', tanggal: true },
+  { id: 'jarak_ke_sekolah_km', label: 'Jarak ke sekolah (km)', angka: '0.1' }, { id: 'waktu_ke_sekolah_menit', label: 'Waktu ke sekolah (menit)', angka: '1' },
+  { id: 'anak_ke', label: 'Anak ke-', angka: '1' }, { id: 'jumlah_saudara', label: 'Jumlah saudara kandung', angka: '1' },
+];
+const KOLOM_ORTU = [
+  { id: 'nama', label: 'Nama' }, { id: 'nik', label: 'NIK', angka: true, maks: 16 }, { id: 'tahun_lahir', label: 'Tahun lahir', angka: true, maks: 4 },
+  { id: 'pendidikan', label: 'Pendidikan', pilihan: PENDIDIKAN }, { id: 'pekerjaan', label: 'Pekerjaan', daftar: 'daftar-pekerjaan', maks: 60 },
+  { id: 'penghasilan', label: 'Penghasilan per bulan', pilihan: PENGHASILAN }, { id: 'no_hp', label: 'Nomor HP', angka: true, maks: 14 },
+];
+const ubah = ref(null), eUbah = ref({}), sibukUbah = ref(false);
+function bukaUbah() {
+  const m = d.value.murid;
+  eUbah.value = {};
+  ubah.value = {
+    murid: Object.fromEntries(KOLOM_UBAH.map(k => [k.id, m[k.id] ?? ''])),
+    orang_tua: ['ayah', 'ibu', 'wali'].map(hubungan => {
+      const o = d.value.orang_tua.find(x => x.hubungan === hubungan) || {};
+      return Object.fromEntries([['hubungan', hubungan], ...KOLOM_ORTU.map(k => [k.id, o[k.id] ?? ''])]);
+    }),
+    alasan: '',
+  };
+}
+async function simpanUbah() {
+  sibukUbah.value = true; eUbah.value = {};
+  try {
+    d.value = await api(`/panitia/pendaftar/${route.params.id}/data`, { method: 'PUT', body: ubah.value });
+    ubah.value = null; toast('Data pendaftar berhasil diubah dan dicatat di riwayat.');
+  } catch (e) { eUbah.value = e.detail || {}; toast(e.message, 'galat'); }
+  finally { sibukUbah.value = false; }
+}
 
 async function muat() { d.value = await api(`/panitia/pendaftar/${route.params.id}`); catatan.value = d.value.pendaftaran.catatan_panitia || ''; }
 async function setDok(x, status) {
@@ -166,6 +274,16 @@ onMounted(muat); onUnmounted(tutup);
 .tombol-hapus { display: inline-flex; align-items: center; gap: 6px; padding: .4rem .8rem; border-radius: 999px; font: inherit; font-size: .85rem; font-weight: 700;
   color: var(--merah); background: #fdecea; border: 1px solid #f6c9c4; cursor: pointer; transition: background .15s, color .15s; }
 .tombol-hapus:hover { background: var(--merah); color: #fff; }
+.tombol-ubah { display: inline-flex; align-items: center; gap: 6px; padding: .4rem .8rem; border-radius: 999px; font: inherit; font-size: .85rem; font-weight: 700;
+  color: var(--biru); background: #eaf0fa; border: 1px solid #c9d8f1; cursor: pointer; transition: background .15s, color .15s; }
+.tombol-ubah:hover { background: var(--biru); color: #fff; }
+.cek .saran { background: #f4f6fa; font-size: .86rem; } .cek .saran::before { content: '→'; color: var(--abu); }
+.tautan { border: 0; background: none; padding: 0; font: inherit; color: var(--biru); text-decoration: underline; cursor: pointer; font-weight: 600; }
+.tautan:disabled { color: var(--abu); cursor: wait; }
+h4 { margin: 14px 0 8px; }
+fieldset { border: 1px solid var(--garis); border-radius: 8px; margin: 0 0 12px; padding: 10px 12px 0; }
+legend { font-weight: 700; padding: 0 6px; }
+.pesan.kecil { font-size: .86rem; }
 .dua { display: grid; grid-template-columns: 1fr 1.1fr; gap: 16px; align-items: start; }
 h3 { margin-top: 14px; } h3:first-child { margin-top: 0; }
 .cek { list-style: none; padding: 0; margin: 0 0 8px; }
