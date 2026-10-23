@@ -7,7 +7,8 @@
     <div class="kpi">
       <div v-for="k in kpi" :key="k.t" class="stat" :class="k.w">
         <span class="stat-ikon"><Ikon :nama="k.ikon" :ukuran="22" /></span>
-        <span class="stat-teks"><strong>{{ k.n }}</strong><span>{{ k.t }}</span></span></div>
+        <span class="stat-teks"><strong>{{ k.n }}</strong><span>{{ k.t }}</span>
+          <small v-if="k.ket" class="stat-ket">{{ k.ket }}</small></span></div>
     </div>
 
     <div class="kartu">
@@ -45,7 +46,8 @@ const total = computed(() => r.value.status.filter(s => s.status !== 'draf').red
 const kpi = computed(() => [
   { t: 'Total pendaftar', n: total.value, w: 'w-ungu', ikon: 'grupPengguna' },
   { t: 'Terverifikasi', n: st('terverifikasi') + st('diterima') + st('tidak_diterima'), w: 'w-biru', ikon: 'centang' },
-  { t: 'Diterima', n: st('diterima'), w: 'w-hijau', ikon: 'centangBulat' },
+  // Status "diterima" baru diberikan saat panitia menetapkan & mengumumkan hasil (tabel di menu Seleksi hanya pratinjau)
+  { t: 'Diterima', n: st('diterima'), w: 'w-hijau', ikon: 'centangBulat', ket: r.value.periode.hasil_diumumkan ? '' : 'Hasil Belum Diumumkan' },
   { t: 'Sudah daftar ulang', n: r.value.jalur.reduce((a, j) => a + j.daftar_ulang, 0), w: 'w-teal', ikon: 'topiWisuda' },
 ]);
 const maks = a => Math.max(1, ...a.map(x => x.jumlah));
@@ -66,10 +68,12 @@ onMounted(async () => { r.value = await api('/rekap'); });
 <style scoped>
 .judul { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
 .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 12px 0 16px; }
+.stat .stat-teks .stat-ket { display: inline-block; margin-top: 4px; padding: .15rem .5rem; border-radius: 6px; font-size: .7rem; font-weight: 700;
+  line-height: 1.3; background: #fff4e0; color: #9a5b00; width: fit-content; white-space: nowrap; }
 
 .grafik { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 16px; }
 .batang { margin-top: 10px; } .label { display: flex; justify-content: space-between; font-size: .9rem; margin-bottom: 4px; }
 .trek { height: 10px; background: #eef1f5; border-radius: 99px; overflow: hidden; } .isi { height: 100%; background: var(--biru); }
 .gulir { overflow-x: auto; }
-@media (max-width: 760px) { .kpi { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 760px) { .kpi { grid-template-columns: 1fr 1fr; } .stat .stat-teks .stat-ket { white-space: normal; } }
 </style>
